@@ -1,0 +1,66 @@
+import type { ReactNode } from 'react';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
+import type { LessonMeta } from '../../content/lessons';
+import { ObservationBox } from '../ObservationBox/ObservationBox';
+import { PhaseLegend } from '../PhaseLegend/PhaseLegend';
+
+interface LessonShellProps {
+  meta: LessonMeta;
+  purpose: string;
+  children: ReactNode;
+  feedback: string;
+  onPrevious: () => void;
+  onNext: () => void;
+  previousDisabled: boolean;
+  nextDisabled: boolean;
+}
+
+export function LessonShell({
+  meta,
+  purpose,
+  children,
+  feedback,
+  onPrevious,
+  onNext,
+  previousDisabled,
+  nextDisabled,
+}: LessonShellProps) {
+  return (
+    <article className="lesson-shell">
+      <header className="lesson-shell__header">
+        <div>
+          <p className="lesson-shell__step">Lesson {meta.number}</p>
+          <h1>{meta.title}</h1>
+          <p>{purpose}</p>
+        </div>
+        <PhaseLegend />
+      </header>
+
+      <div className="learning-cycle" aria-label="Lesson cycle">
+        {['Predict', 'Change', 'Observe', 'Explain', 'Check'].map((step) => (
+          <span key={step}>{step}</span>
+        ))}
+      </div>
+
+      {children}
+
+      <section className="notice-card" aria-live="polite">
+        <h3>What to notice</h3>
+        <p>{feedback}</p>
+      </section>
+
+      <ObservationBox lessonId={meta.id} />
+
+      <nav className="lesson-nav" aria-label="Lesson navigation">
+        <button type="button" onClick={onPrevious} disabled={previousDisabled}>
+          <ArrowLeft aria-hidden="true" size={18} />
+          Previous
+        </button>
+        <button type="button" onClick={onNext} disabled={nextDisabled}>
+          Next
+          <ArrowRight aria-hidden="true" size={18} />
+        </button>
+      </nav>
+    </article>
+  );
+}
