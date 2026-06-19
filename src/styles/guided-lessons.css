@@ -111,6 +111,12 @@
   min-width: 0;
 }
 
+.guided-left-rail {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
 .guided-copy {
   position: sticky;
   top: 18px;
@@ -170,7 +176,7 @@
   margin-bottom: 5px;
   color: #6f3517;
   font-size: 0.82rem;
-  letter-spacing: 0.02em;
+  letter-spacing: 0;
   text-transform: uppercase;
 }
 
@@ -178,6 +184,13 @@
 .visual-explanation,
 .choice-panel p,
 .weight-panel p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.91rem;
+  line-height: 1.52;
+}
+
+.control-context {
   margin: 0;
   color: var(--muted);
   font-size: 0.91rem;
@@ -517,6 +530,18 @@
 
 .combination-stage {
   grid-template-columns: minmax(290px, 0.75fr) minmax(520px, 1.45fr);
+  grid-template-areas: "controls visual";
+}
+
+.combination-stage .guided-left-rail {
+  grid-area: controls;
+  position: sticky;
+  top: 18px;
+  align-self: start;
+}
+
+.combination-stage .guided-copy {
+  position: static;
 }
 
 .choice-panel,
@@ -629,10 +654,32 @@
   .guided-stage,
   .combination-stage {
     grid-template-columns: 1fr;
+    grid-template-areas: none;
   }
 
   .guided-copy {
     position: static;
+  }
+
+  .combination-stage .guided-left-rail {
+    display: contents;
+    position: static;
+  }
+
+  .combination-stage .guided-control-rail {
+    position: sticky;
+    top: 10px;
+    z-index: 18;
+    display: grid;
+    gap: 10px;
+    max-height: calc(100dvh - 20px);
+    padding: 10px;
+    overflow-y: auto;
+    background: rgba(255, 253, 248, 0.93);
+    border: 1px solid rgba(218, 208, 194, 0.92);
+    border-radius: 16px;
+    box-shadow: 0 14px 34px rgba(48, 39, 28, 0.16);
+    backdrop-filter: blur(14px);
   }
 }
 
@@ -675,6 +722,38 @@
   .guided-actions button {
     width: 100%;
   }
+
+  .combination-stage .guided-control-rail {
+    top: 8px;
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .combination-stage .guided-control-rail .plain-equation {
+    padding: 11px;
+    font-size: 1.03rem;
+  }
+
+  .combination-stage .choice-panel,
+  .combination-stage .weight-panel {
+    padding: 10px;
+  }
+
+  .combination-stage .choice-panel h3 {
+    font-size: 0.86rem;
+  }
+
+  .combination-stage .sign-choice,
+  .combination-stage .weight-presets {
+    gap: 6px;
+  }
+
+  .combination-stage .sign-choice button,
+  .combination-stage .weight-presets button {
+    min-height: 34px;
+    padding: 7px 9px;
+    font-size: 0.8rem;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -686,4 +765,169 @@
   .sign-swap-button {
     transition: none;
   }
+}
+
+/* Combine-values lesson: show the molecular orbital as the spatial result of
+   amplitude addition, then show a separate qualitative |psi|^2 view. */
+.combine-values-figure {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.combine-values-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  background: #fffdf8;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+
+.combine-panel {
+  fill: #fffdf8;
+  stroke: #ded3c5;
+  stroke-width: 1.5;
+}
+
+.combine-panel--result {
+  fill: #f4faf6;
+  stroke: #bfd8cd;
+  stroke-width: 2;
+}
+
+.combine-panel-title {
+  fill: var(--ink);
+  font-size: 16px;
+  font-weight: 820;
+}
+
+.combine-subtitle {
+  fill: #5f574f;
+  font-size: 12px;
+  font-weight: 780;
+  letter-spacing: 0.02em;
+}
+
+.combine-axis,
+.combine-baseline,
+.combine-density-axis {
+  stroke: #8a8177;
+  stroke-width: 1.5;
+}
+
+.combine-axis {
+  stroke-dasharray: 4 4;
+  opacity: 0.7;
+}
+
+.combine-phase {
+  stroke: rgba(35, 31, 26, 0.28);
+  stroke-width: 1.4;
+}
+
+.combine-phase--positive {
+  fill: rgba(31, 111, 178, 0.84);
+}
+
+.combine-phase--negative {
+  fill: rgba(213, 106, 45, 0.84);
+}
+
+.combine-source-lobe {
+  opacity: 0.82;
+}
+
+.combine-source-lobe--blend {
+  opacity: 0.58;
+}
+
+.combine-result-sign {
+  font-size: 20px;
+}
+
+.combine-nucleus {
+  fill: #312c27;
+  stroke: #fff;
+  stroke-width: 2;
+}
+
+.combine-sign {
+  fill: #fff;
+  font-size: 24px;
+  font-weight: 900;
+  pointer-events: none;
+}
+
+.combine-atom-label,
+.combine-result-atom {
+  fill: var(--ink);
+  font-size: 13px;
+  font-weight: 760;
+}
+
+.combine-result-atom {
+  fill: #fff;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.combine-weight-label,
+.combine-density-label,
+.combine-node-label {
+  fill: #675f57;
+  font-size: 11px;
+  font-weight: 720;
+}
+
+.combine-node-gap,
+.combine-density-node-gap {
+  fill: #f4faf6;
+}
+
+.combine-node-line {
+  stroke: #4a4140;
+  stroke-width: 2;
+  stroke-dasharray: 6 5;
+}
+
+.combine-density-node {
+  stroke: #4a4140;
+  stroke-width: 1.6;
+  stroke-dasharray: 4 4;
+}
+
+.combine-density-area {
+  fill: rgba(36, 107, 98, 0.2);
+  stroke: none;
+}
+
+.combine-density-curve {
+  fill: none;
+  stroke: rgba(23, 77, 72, 0.9);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.combine-values-caption {
+  display: grid;
+  gap: 3px;
+  padding: 11px 12px;
+  color: var(--muted);
+  background: #f3faf6;
+  border: 1px solid #c9ded6;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  line-height: 1.42;
+}
+
+.combine-values-caption strong {
+  color: var(--accent-strong);
+}
+
+.combine-values-caption small {
+  color: #766e65;
+  font-size: 0.78rem;
 }
