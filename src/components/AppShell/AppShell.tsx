@@ -1,21 +1,25 @@
-import { Download } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
-import { lessons } from '../../content/lessons';
-import { readObservation } from '../ObservationBox/storage';
-import { lessonComponents } from '../../lessons';
+import { Download } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { lessons } from "../../content/lessons";
+import { readObservation } from "../ObservationBox/storage";
+import { lessonComponents } from "../../lessons";
 
 export function AppShell() {
   const [activeIndex, setActiveIndex] = useState(0);
   const activeLesson = lessons[activeIndex];
   const ActiveLesson = lessonComponents[activeLesson.id];
-  const progress = useMemo(() => ((activeIndex + 1) / lessons.length) * 100, [activeIndex]);
+  const progress = useMemo(
+    () => ((activeIndex + 1) / lessons.length) * 100,
+    [activeIndex],
+  );
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0 });
   }, [activeIndex]);
 
   const previous = () => setActiveIndex((index) => Math.max(0, index - 1));
-  const next = () => setActiveIndex((index) => Math.min(lessons.length - 1, index + 1));
+  const next = () =>
+    setActiveIndex((index) => Math.min(lessons.length - 1, index + 1));
 
   const exportObservations = () => {
     const markdown = lessons
@@ -23,27 +27,27 @@ export function AppShell() {
         const record = readObservation(lesson.id);
         return [
           `## Lesson ${lesson.number}: ${lesson.title}`,
-          '',
+          "",
           `**Prediction**`,
-          record.prediction || '_No response yet._',
-          '',
+          record.prediction || "_No response yet._",
+          "",
           `**Observation**`,
-          record.observation || '_No response yet._',
-          '',
+          record.observation || "_No response yet._",
+          "",
           `**Check understanding**`,
-          record.check || '_No response yet._',
-          '',
-        ].join('\n');
+          record.check || "_No response yet._",
+          "",
+        ].join("\n");
       })
-      .join('\n');
+      .join("\n");
 
     const blob = new Blob([`# Molecular Orbital Observations\n\n${markdown}`], {
-      type: 'text/markdown;charset=utf-8',
+      type: "text/markdown;charset=utf-8",
     });
     const url = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
+    const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = 'mo-observations.md';
+    anchor.download = "mo-observations.md";
     anchor.click();
     URL.revokeObjectURL(url);
   };
@@ -52,7 +56,9 @@ export function AppShell() {
     <div className="app-shell">
       <aside className="sidebar">
         <div className="brand-block">
-          <span className="brand-mark" aria-hidden="true">psi</span>
+          <span className="brand-mark" aria-hidden="true">
+            ψ
+          </span>
           <div>
             <p>Ceci n'est pas une orbitale</p>
             <strong>MO Explainer</strong>
@@ -66,16 +72,20 @@ export function AppShell() {
             <button
               key={lesson.id}
               type="button"
-              className={index === activeIndex ? 'is-active' : ''}
+              className={index === activeIndex ? "is-active" : ""}
               onClick={() => setActiveIndex(index)}
-              aria-current={index === activeIndex ? 'step' : undefined}
+              aria-current={index === activeIndex ? "step" : undefined}
             >
               <span>{lesson.number}</span>
               <strong>{lesson.shortTitle}</strong>
             </button>
           ))}
         </nav>
-        <button type="button" className="export-button" onClick={exportObservations}>
+        <button
+          type="button"
+          className="export-button"
+          onClick={exportObservations}
+        >
           <Download aria-hidden="true" size={17} />
           Export observations
         </button>

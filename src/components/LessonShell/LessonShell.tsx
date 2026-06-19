@@ -1,14 +1,17 @@
-import type { ReactNode } from 'react';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
-import type { LessonMeta } from '../../content/lessons';
-import { ObservationBox } from '../ObservationBox/ObservationBox';
-import { PhaseLegend } from '../PhaseLegend/PhaseLegend';
+import type { ReactNode } from "react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
+import type { LessonMeta } from "../../content/lessons";
+import { ObservationBox } from "../ObservationBox/ObservationBox";
+import { PhaseLegend } from "../PhaseLegend/PhaseLegend";
 
 interface LessonShellProps {
   meta: LessonMeta;
   purpose: string;
+  question?: string;
   children: ReactNode;
   feedback: string;
+  showPhaseLegend?: boolean;
+  showLearningCycle?: boolean;
   onPrevious: () => void;
   onNext: () => void;
   previousDisabled: boolean;
@@ -18,8 +21,11 @@ interface LessonShellProps {
 export function LessonShell({
   meta,
   purpose,
+  question,
   children,
   feedback,
+  showPhaseLegend = true,
+  showLearningCycle = true,
   onPrevious,
   onNext,
   previousDisabled,
@@ -33,14 +39,23 @@ export function LessonShell({
           <h1>{meta.title}</h1>
           <p>{purpose}</p>
         </div>
-        <PhaseLegend />
+        {showPhaseLegend ? <PhaseLegend /> : null}
       </header>
 
-      <div className="learning-cycle" aria-label="Lesson cycle">
-        {['Predict', 'Change', 'Observe', 'Explain', 'Check'].map((step) => (
-          <span key={step}>{step}</span>
-        ))}
-      </div>
+      {question ? (
+        <section className="lesson-question" aria-label="Big question">
+          <span>Big question</span>
+          <p>{question}</p>
+        </section>
+      ) : null}
+
+      {showLearningCycle ? (
+        <div className="learning-cycle" aria-label="Lesson cycle">
+          {["Predict", "Change", "Observe", "Explain", "Check"].map((step) => (
+            <span key={step}>{step}</span>
+          ))}
+        </div>
+      ) : null}
 
       {children}
 

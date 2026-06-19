@@ -1,13 +1,16 @@
 export function PhaseLegend() {
   return (
-    <aside className="phase-legend" aria-label="Phase legend">
+    <aside className="phase-legend" aria-label="Orbital sign legend">
       <span className="phase-chip phase-chip--positive">
-        <strong>+</strong> positive phase
+        <strong>+</strong> ψ is greater than zero
       </span>
       <span className="phase-chip phase-chip--negative">
-        <strong>-</strong> negative phase
+        <strong>−</strong> ψ is less than zero
       </span>
-      <span className="phase-legend__note">Blue/orange phase colors show the sign of psi, not charge.</span>
+      <span className="phase-legend__note">
+        The colors label the sign of ψ. They do not show positive and negative
+        charge.
+      </span>
     </aside>
   );
 }
