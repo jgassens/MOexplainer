@@ -1,6 +1,6 @@
 # MO Explainer
 
-MO Explainer is a static React teaching app that turns a Colab molecular-orbital lesson into a guided browser experience for sophomore undergraduate chemistry students.
+MO Explainer is a static React teaching app that turns a Colab molecular-orbital lesson into a guided browser experience for students taking an Advanced Physical Organic Chemistry course, but it written at the level of sophomore undergraduate chemistry students.
 
 The site uses qualitative teaching models, responsive SVG diagrams, KaTeX equations, and local-only observation notes. All calculated energies are relative energy in arbitrary teaching units, not experimental values.
 
@@ -68,5 +68,4 @@ When hosted on `https://OWNER.github.io/REPO/`, the app derives the Colab URL au
 5. Keep the lesson loop: Predict, Change, Observe, Explain, Check.
 
 ## Source Notes
-
-The original notebook and Chapter 1 bonding PDF are stored in `source/`. Use the notebook as the functional outline and the chapter PDF as the chemistry/pedagogy authority for future lesson revisions.
+*this should be a proper APA style reference to the textbook*
