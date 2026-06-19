@@ -22,7 +22,7 @@ export const lessons: LessonMeta[] = [
     id: "phase",
     number: 1,
     shortTitle: "Read ψ",
-    title: "Read ψ: amplitude, phase, and probability",
+    title: "What does ψ mean?",
   },
   {
     id: "combination",

@@ -544,6 +544,17 @@ export function PhaseLesson(props: LessonComponentProps) {
             <p className="psi-stage-copy__eyebrow">Step {stageIndex + 1} of {stages.length}</p>
             <h2>{stage.title}</h2>
             <p>{stage.lead}</p>
+            {stage.id === "read" ? (
+              <aside className="psi-explainer" aria-label="What psi does">
+                <strong>What does ψ do?</strong>
+                <p>
+                  ψ is the input for prediction. Its size tells where electron
+                  density can appear after squaring it. Its sign tells phase, so
+                  matching signs add and opposite signs cancel. That is why ψ,
+                  not just |ψ|², controls nodes, bonding, and antibonding.
+                </p>
+              </aside>
+            ) : null}
           </div>
           <div className="psi-stage-equation">{stage.equation}</div>
           <p className="psi-stage-correction">
