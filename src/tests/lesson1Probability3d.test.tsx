@@ -80,6 +80,28 @@ describe("Lesson 1 probability in 3D step", () => {
     expect(target.textContent).toMatch(/Step 5 of 5/i);
     expect(target.textContent).toContain("From one point to a region of space");
     expect(target.textContent).toContain("P(R) = ∭R |ψ|² dτ");
+    expect(target.textContent).toContain("Show one p orbital at a time");
+    expect(target.textContent).toContain("pₓ");
+    expect(target.textContent).toContain("pᵧ");
+    expect(target.textContent).toContain("p_z");
+  });
+
+  it("defaults to p-y and updates the displayed equation when another p orbital is selected", async () => {
+    const target = renderLesson();
+    await goToProbabilityStep(target);
+
+    expect(target.textContent).toContain("This view is currently using i = y");
+
+    const pzButton = target.querySelector('button[aria-label="Show p z orbital"]');
+    expect(pzButton).toBeTruthy();
+
+    await act(async () => {
+      pzButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      await Promise.resolve();
+    });
+
+    expect(target.textContent).toContain("This view is currently using i = z");
+    expect(target.textContent).toContain("ψp_z(x,y,z) = N z");
   });
 
   it("labels center density as density and box probability as volume probability", async () => {

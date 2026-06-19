@@ -9,7 +9,11 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { MutableRefObject } from "react";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
-import type { AxisAlignedBox3D, GlobalPhaseSign } from "../../models/pyOrbital3d";
+import type {
+  AxisAlignedBox3D,
+  GlobalPhaseSign,
+  POrbitalAxis,
+} from "../../models/pyOrbital3d";
 import { Orbital3DFallback } from "./Orbital3DFallback";
 import { PyOrbitalSurface } from "./PyOrbitalSurface";
 import { SamplingBox3D } from "./SamplingBox3D";
@@ -20,7 +24,42 @@ interface PyOrbitalSceneProps {
   box: AxisAlignedBox3D;
   globalPhase: GlobalPhaseSign;
   mode: SamplingBoxMode;
+  orbitalAxis: POrbitalAxis;
   onBoxChange: (box: AxisAlignedBox3D) => void;
+}
+
+const nodalPlaneConfig: Record<
+  POrbitalAxis,
+  {
+    label: string;
+    labelPosition: [number, number, number];
+    rotation: [number, number, number];
+  }
+> = {
+  x: {
+    label: "x = 0 nodal plane",
+    labelPosition: [0.04, 1.9, 1.9],
+    rotation: [0, Math.PI / 2, 0],
+  },
+  y: {
+    label: "y = 0 nodal plane",
+    labelPosition: [1.9, 0.03, 1.9],
+    rotation: [Math.PI / 2, 0, 0],
+  },
+  z: {
+    label: "z = 0 nodal plane",
+    labelPosition: [1.9, 1.9, 0.04],
+    rotation: [0, 0, 0],
+  },
+};
+
+function phaseLabelPosition(axis: POrbitalAxis, sign: 1 | -1): [number, number, number] {
+  const value = sign * 1.55;
+  return [
+    axis === "x" ? value : 0,
+    axis === "y" ? value : 0,
+    axis === "z" ? value : 0,
+  ];
 }
 
 function AxisLabel({ children, position }: { children: string; position: [number, number, number] }) {
@@ -69,6 +108,7 @@ function SceneContent({
   box,
   globalPhase,
   mode,
+  orbitalAxis,
   onBoxChange,
   resetKey,
 }: PyOrbitalSceneProps & { resetKey: number }) {
@@ -76,6 +116,7 @@ function SceneContent({
   const [orbitEnabled, setOrbitEnabled] = useState(true);
   const positiveSign = globalPhase === 1 ? "+" : "−";
   const negativeSign = globalPhase === 1 ? "−" : "+";
+  const nodePlane = nodalPlaneConfig[orbitalAxis];
   const resolution = useMemo(() => {
     if (typeof window !== "undefined" && window.innerWidth < 760) return 24;
     return 32;
@@ -95,12 +136,12 @@ function SceneContent({
       <AxisLabel position={[0, 3.25, 0]}>y</AxisLabel>
       <AxisLabel position={[0, 0, 3.25]}>z</AxisLabel>
 
-      <mesh rotation={[Math.PI / 2, 0, 0]}>
+      <mesh rotation={nodePlane.rotation}>
         <planeGeometry args={[5.9, 5.9]} />
         <meshStandardMaterial color="#7e766e" transparent opacity={0.18} depthWrite={false} />
       </mesh>
-      <Html position={[1.9, 0.03, 1.9]} center className="orbital3d-node-label">
-        y = 0 nodal plane
+      <Html position={nodePlane.labelPosition} center className="orbital3d-node-label">
+        {nodePlane.label}
       </Html>
 
       <mesh>
@@ -108,9 +149,14 @@ function SceneContent({
         <meshStandardMaterial color="#27231f" />
       </mesh>
 
-      <PyOrbitalSurface alpha={alpha} globalPhase={globalPhase} resolution={resolution} />
-      <PhaseLabel position={[0, 1.55, 0]}>{positiveSign}</PhaseLabel>
-      <PhaseLabel position={[0, -1.55, 0]}>{negativeSign}</PhaseLabel>
+      <PyOrbitalSurface
+        alpha={alpha}
+        globalPhase={globalPhase}
+        orbitalAxis={orbitalAxis}
+        resolution={resolution}
+      />
+      <PhaseLabel position={phaseLabelPosition(orbitalAxis, 1)}>{positiveSign}</PhaseLabel>
+      <PhaseLabel position={phaseLabelPosition(orbitalAxis, -1)}>{negativeSign}</PhaseLabel>
 
       <SamplingBox3D
         box={box}
@@ -146,6 +192,7 @@ export function PyOrbitalScene({
   box,
   globalPhase,
   mode,
+  orbitalAxis,
   onBoxChange,
 }: PyOrbitalSceneProps) {
   const [resetKey, setResetKey] = useState(0);
@@ -154,10 +201,16 @@ export function PyOrbitalScene({
     <section className="orbital3d-scene-card" aria-label="Three-dimensional orbital view">
       <div className="orbital3d-canvas-wrap">
         <Canvas
-          aria-label="Interactive three-dimensional p-y orbital with positive and negative phase lobes, a nodal plane, coordinate axes, and a movable sampling box."
+          aria-label={`Interactive three-dimensional p-${orbitalAxis} orbital with positive and negative phase lobes, a nodal plane, coordinate axes, and a movable sampling box.`}
           camera={{ position: [4.2, 3.0, 5.2], fov: 42, near: 0.1, far: 100 }}
           dpr={[1, 1.5]}
-          fallback={<Orbital3DFallback box={box} globalPhase={globalPhase} />}
+          fallback={
+            <Orbital3DFallback
+              box={box}
+              globalPhase={globalPhase}
+              orbitalAxis={orbitalAxis}
+            />
+          }
           frameloop="demand"
         >
           <SceneContent
@@ -165,6 +218,7 @@ export function PyOrbitalScene({
             box={box}
             globalPhase={globalPhase}
             mode={mode}
+            orbitalAxis={orbitalAxis}
             onBoxChange={onBoxChange}
             resetKey={resetKey}
           />

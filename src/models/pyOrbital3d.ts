@@ -12,6 +12,7 @@ export interface AxisAlignedBox3D {
 }
 
 export type GlobalPhaseSign = 1 | -1;
+export type POrbitalAxis = "x" | "y" | "z";
 
 const PROBABILITY_TOLERANCE = 1e-12;
 
@@ -67,14 +68,19 @@ function normalizeProbability(value: number) {
   throw new Error(`Integrated probability ${value} is outside [0, 1].`);
 }
 
+function coordinateForAxis(point: Point3D, axis: POrbitalAxis) {
+  return point[axis];
+}
+
 export function pyNormalizationConstant(alpha: number): number {
   validateAlpha(alpha);
   return (2 ** (7 / 4) * alpha ** (5 / 4)) / Math.PI ** (3 / 4);
 }
 
-export function pyWavefunction(
+export function pOrbitalWavefunction(
   point: Point3D,
   alpha: number,
+  axis: POrbitalAxis = "y",
   globalPhase: GlobalPhaseSign = 1,
 ): number {
   assertFinitePoint(point, "point");
@@ -83,17 +89,34 @@ export function pyWavefunction(
   return (
     globalPhase *
     pyNormalizationConstant(alpha) *
-    point.y *
+    coordinateForAxis(point, axis) *
     Math.exp(-alpha * rSquared)
   );
 }
 
-export function pyDensity(point: Point3D, alpha: number): number {
+export function pyWavefunction(
+  point: Point3D,
+  alpha: number,
+  globalPhase: GlobalPhaseSign = 1,
+): number {
+  return pOrbitalWavefunction(point, alpha, "y", globalPhase);
+}
+
+export function pOrbitalDensity(
+  point: Point3D,
+  alpha: number,
+  axis: POrbitalAxis = "y",
+): number {
   assertFinitePoint(point, "point");
   validateAlpha(alpha);
   const rSquared = point.x * point.x + point.y * point.y + point.z * point.z;
   const normal = pyNormalizationConstant(alpha);
-  return normal * normal * point.y * point.y * Math.exp(-2 * alpha * rSquared);
+  const axialCoordinate = coordinateForAxis(point, axis);
+  return normal * normal * axialCoordinate * axialCoordinate * Math.exp(-2 * alpha * rSquared);
+}
+
+export function pyDensity(point: Point3D, alpha: number): number {
+  return pOrbitalDensity(point, alpha, "y");
 }
 
 export function gaussianIntegral0(lower: number, upper: number, beta: number): number {
@@ -138,16 +161,36 @@ export function boxVolume(box: AxisAlignedBox3D): number {
 }
 
 export function probabilityInPyBox(box: AxisAlignedBox3D, alpha: number): number {
+  return probabilityInPOrbitalBox(box, alpha, "y");
+}
+
+export function probabilityInPOrbitalBox(
+  box: AxisAlignedBox3D,
+  alpha: number,
+  axis: POrbitalAxis = "y",
+): number {
   validateAlpha(alpha);
   const bounds = boxBounds(box);
   const beta = 2 * alpha;
   const normal = pyNormalizationConstant(alpha);
+  const xIntegral =
+    axis === "x"
+      ? gaussianIntegral2(bounds.x1, bounds.x2, beta)
+      : gaussianIntegral0(bounds.x1, bounds.x2, beta);
+  const yIntegral =
+    axis === "y"
+      ? gaussianIntegral2(bounds.y1, bounds.y2, beta)
+      : gaussianIntegral0(bounds.y1, bounds.y2, beta);
+  const zIntegral =
+    axis === "z"
+      ? gaussianIntegral2(bounds.z1, bounds.z2, beta)
+      : gaussianIntegral0(bounds.z1, bounds.z2, beta);
   const probability =
     normal *
     normal *
-    gaussianIntegral0(bounds.x1, bounds.x2, beta) *
-    gaussianIntegral2(bounds.y1, bounds.y2, beta) *
-    gaussianIntegral0(bounds.z1, bounds.z2, beta);
+    xIntegral *
+    yIntegral *
+    zIntegral;
 
   return normalizeProbability(probability);
 }

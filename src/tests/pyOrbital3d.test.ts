@@ -4,6 +4,9 @@ import {
   gaussianIntegral0,
   gaussianIntegral2,
   probabilityInPyBox,
+  probabilityInPOrbitalBox,
+  pOrbitalDensity,
+  pOrbitalWavefunction,
   pyDensity,
   pyMaximumAbsoluteAmplitude,
   pyNormalizationConstant,
@@ -167,6 +170,43 @@ describe("normalized 3D p-y orbital model", () => {
     expect(infiniteProbability(1.6)).toBeCloseTo(1, 12);
     expect(pyMaximumAbsoluteAmplitude(1.6)).toBeGreaterThan(0);
     expect(boxVolume({ center: point, size: { x: 1, y: 2, z: 3 } })).toBe(6);
+  });
+
+  it("supports separate p-x, p-y, and p-z orbitals with axis-specific signs", () => {
+    const alpha = 0.8;
+    expect(pOrbitalWavefunction({ x: 0.9, y: 0, z: 0 }, alpha, "x")).toBeGreaterThan(0);
+    expect(pOrbitalWavefunction({ x: 0, y: 0.9, z: 0 }, alpha, "y")).toBeGreaterThan(0);
+    expect(pOrbitalWavefunction({ x: 0, y: 0, z: 0.9 }, alpha, "z")).toBeGreaterThan(0);
+    expect(pOrbitalWavefunction({ x: -0.9, y: 0, z: 0 }, alpha, "x")).toBeCloseTo(
+      -pOrbitalWavefunction({ x: 0.9, y: 0, z: 0 }, alpha, "x"),
+      12,
+    );
+  });
+
+  it("puts the squared coordinate on the selected axis for box probability", () => {
+    const alpha = 1;
+    const xBox: AxisAlignedBox3D = {
+      center: { x: 1, y: 0, z: 0 },
+      size: { x: 1, y: 1, z: 1 },
+    };
+    const yBox: AxisAlignedBox3D = {
+      center: { x: 0, y: 1, z: 0 },
+      size: { x: 1, y: 1, z: 1 },
+    };
+    const zBox: AxisAlignedBox3D = {
+      center: { x: 0, y: 0, z: 1 },
+      size: { x: 1, y: 1, z: 1 },
+    };
+
+    expect(probabilityInPOrbitalBox(xBox, alpha, "x")).toBeCloseTo(
+      probabilityInPOrbitalBox(yBox, alpha, "y"),
+      12,
+    );
+    expect(probabilityInPOrbitalBox(zBox, alpha, "z")).toBeCloseTo(
+      probabilityInPOrbitalBox(yBox, alpha, "y"),
+      12,
+    );
+    expect(pOrbitalDensity({ x: 0, y: 1, z: 0 }, alpha, "x")).toBe(0);
   });
 
   it("rejects invalid ordinary inputs instead of silently clamping them", () => {

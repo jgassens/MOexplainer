@@ -1,12 +1,13 @@
 import {
   boxBounds,
   boxVolume,
-  probabilityInPyBox,
-  pyDensity,
+  pOrbitalDensity,
+  probabilityInPOrbitalBox,
   pyNormalizationConstant,
-  pyWavefunction,
+  pOrbitalWavefunction,
   type AxisAlignedBox3D,
   type GlobalPhaseSign,
+  type POrbitalAxis,
 } from "../../models/pyOrbital3d";
 import type { ReactNode } from "react";
 
@@ -17,6 +18,7 @@ interface Orbital3DLiveValuesProps {
   box: AxisAlignedBox3D;
   globalPhase: GlobalPhaseSign;
   highlight: IntegralHighlight;
+  orbitalAxis: POrbitalAxis;
 }
 
 function formatValue(value: number, digits = 4) {
@@ -34,6 +36,12 @@ function formatBounds(lower: number, upper: number) {
   return `[${lower.toFixed(2)}, ${upper.toFixed(2)}]`;
 }
 
+function orbitalLabel(axis: POrbitalAxis) {
+  if (axis === "x") return "pₓ";
+  if (axis === "y") return "pᵧ";
+  return "p_z";
+}
+
 function Highlighted({
   active,
   children,
@@ -49,11 +57,12 @@ export function Orbital3DLiveValues({
   box,
   globalPhase,
   highlight,
+  orbitalAxis,
 }: Orbital3DLiveValuesProps) {
   const bounds = boxBounds(box);
-  const psiAtCenter = pyWavefunction(box.center, alpha, globalPhase);
-  const densityAtCenter = pyDensity(box.center, alpha);
-  const probability = probabilityInPyBox(box, alpha);
+  const psiAtCenter = pOrbitalWavefunction(box.center, alpha, orbitalAxis, globalPhase);
+  const densityAtCenter = pOrbitalDensity(box.center, alpha, orbitalAxis);
+  const probability = probabilityInPOrbitalBox(box, alpha, orbitalAxis);
   const outside = 1 - probability;
   const percent = probability * 100;
   const normalization = pyNormalizationConstant(alpha);
@@ -77,7 +86,7 @@ export function Orbital3DLiveValues({
           <Highlighted active={highlight === "z"}>
             ∫<sub>{bounds.z1.toFixed(2)}</sub><sup>{bounds.z2.toFixed(2)}</sup>
           </Highlighted>{" "}
-          |ψ(x,y,z)|² dz dy dx
+          |ψ<sub>{orbitalLabel(orbitalAxis)}</sub>(x,y,z)|² dz dy dx
         </p>
         <p>
           = <strong>{formatValue(probability, 5)}</strong> ={" "}
@@ -94,7 +103,7 @@ export function Orbital3DLiveValues({
         </article>
         <article className={highlight === "phase" ? "is-highlighted" : undefined}>
           <span>signed wave amplitude at the center</span>
-          <strong>ψ = {formatSignedValue(psiAtCenter)}</strong>
+          <strong>ψ<sub>{orbitalLabel(orbitalAxis)}</sub> = {formatSignedValue(psiAtCenter)}</strong>
         </article>
         <article>
           <span>local probability density at the center</span>

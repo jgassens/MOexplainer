@@ -78,7 +78,7 @@ const stages: readonly StageCopy[] = [
     title: "From one point to a region of space",
     lead: "The wavefunction assigns one signed amplitude to every point in three-dimensional space. Squaring that value gives probability density at the point. An actual probability belongs to a region, not to one exact mathematical point. The sampling box selects a finite volume, and the integral adds |ψ|² throughout that volume.",
     equation:
-      "point (x, y, z) → ψ(x, y, z) → |ψ(x, y, z)|²     volume R → P(R) = ∭R |ψ|² dτ",
+      "ψ_{p_i}(x,y,z) = N i e^−α(x²+y²+z²), where i = x, y, or z     volume R → P(R) = ∭R |ψ|² dτ",
     correction:
       "ψ at the center is not the probability inside the box. |ψ|² at the center is a local density value. Probability requires adding density throughout the complete selected volume.",
   },

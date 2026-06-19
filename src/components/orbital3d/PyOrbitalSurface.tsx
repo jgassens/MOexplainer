@@ -9,8 +9,9 @@ import {
 import { MarchingCubes } from "three/addons/objects/MarchingCubes.js";
 import {
   pyMaximumAbsoluteAmplitude,
-  pyWavefunction,
   type GlobalPhaseSign,
+  type POrbitalAxis,
+  pOrbitalWavefunction,
 } from "../../models/pyOrbital3d";
 
 const FIELD_EXTENT = 3.2;
@@ -35,7 +36,12 @@ function trimGeneratedGeometry(source: BufferGeometry, count: number) {
   return geometry;
 }
 
-function buildPhaseGeometry(alpha: number, resolution: number, phase: GlobalPhaseSign) {
+function buildPhaseGeometry(
+  alpha: number,
+  resolution: number,
+  phase: GlobalPhaseSign,
+  orbitalAxis: POrbitalAxis,
+) {
   const material = new MeshBasicMaterial();
   const marchingCubes = new MarchingCubes(resolution, material, false, false, 120000);
   const maxAmplitude = pyMaximumAbsoluteAmplitude(alpha);
@@ -49,7 +55,8 @@ function buildPhaseGeometry(alpha: number, resolution: number, phase: GlobalPhas
       const y = modelCoordinate(yIndex, resolution);
       for (let xIndex = 0; xIndex < resolution; xIndex += 1) {
         const x = modelCoordinate(xIndex, resolution);
-        const normalizedPsi = pyWavefunction({ x, y, z }, alpha, 1) / maxAmplitude;
+        const normalizedPsi =
+          pOrbitalWavefunction({ x, y, z }, alpha, orbitalAxis, 1) / maxAmplitude;
         marchingCubes.setCell(xIndex, yIndex, zIndex, phase * normalizedPsi);
       }
     }
@@ -65,19 +72,21 @@ function buildPhaseGeometry(alpha: number, resolution: number, phase: GlobalPhas
 export function PyOrbitalSurface({
   alpha,
   globalPhase,
+  orbitalAxis,
   resolution,
 }: {
   alpha: number;
   globalPhase: GlobalPhaseSign;
+  orbitalAxis: POrbitalAxis;
   resolution: number;
 }) {
   const positiveGeometry = useMemo(
-    () => buildPhaseGeometry(alpha, resolution, 1),
-    [alpha, resolution],
+    () => buildPhaseGeometry(alpha, resolution, 1, orbitalAxis),
+    [alpha, orbitalAxis, resolution],
   );
   const negativeGeometry = useMemo(
-    () => buildPhaseGeometry(alpha, resolution, -1),
-    [alpha, resolution],
+    () => buildPhaseGeometry(alpha, resolution, -1, orbitalAxis),
+    [alpha, orbitalAxis, resolution],
   );
   const positiveMaterial = useMemo(
     () =>
