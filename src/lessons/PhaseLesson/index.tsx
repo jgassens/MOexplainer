@@ -1,4 +1,13 @@
-import { useMemo, useState, type ChangeEvent } from "react";
+import {
+  Suspense,
+  lazy,
+  useEffect,
+  useId,
+  useMemo,
+  useState,
+  type ChangeEvent,
+  type ReactNode,
+} from "react";
 import { LessonShell } from "../../components/LessonShell/LessonShell";
 import {
   formatSigned,
@@ -8,7 +17,14 @@ import {
 } from "../../models/teachingWave";
 import type { LessonComponentProps } from "../types";
 
-type StageId = "read" | "magnitude" | "density" | "sign";
+const LazyPyOrbitalExplorer = lazy(() =>
+  import("../../components/orbital3d/PyOrbitalExplorer").then((module) => ({
+    default: module.PyOrbitalExplorer,
+  })),
+);
+
+type StageId = "read" | "magnitude" | "density" | "sign" | "probability3d";
+type ReadoutId = "location" | "amplitude" | "magnitude" | "density";
 
 interface StageCopy {
   id: StageId;
@@ -31,18 +47,18 @@ const stages: readonly StageCopy[] = [
   },
   {
     id: "magnitude",
-    shortTitle: "Magnitude",
-    title: "|ψ| tells how large the amplitude is at that point",
-    lead: "Magnitude means distance from zero. It ignores whether ψ is positive or negative, but it does not yet give a probability.",
-    equation: "ψ = −0.80  →  |ψ| = 0.80",
+    shortTitle: "Size of ψ",
+    title: "Size before squaring: how large is ψ?",
+    lead: "The magnitude |ψ| tells how large the wave amplitude is at this point, ignoring whether the sign is + or −. Large |ψ| means this point can contribute strongly to electron density after squaring. Small |ψ| means weak density after squaring. At a node, |ψ| = 0, so |ψ|² = 0 too.",
+    equation: "ψ = +0.80 or −0.80  →  |ψ| = 0.80",
     correction:
-      "A larger |ψ| does not mean a larger atom, extra charge, or an extra lobe. It means the wave amplitude is larger at that location.",
+      "A larger |ψ| does not mean a larger atom, extra charge, or raw probability at a point. It means more wave amplitude is present before squaring.",
   },
   {
     id: "density",
-    shortTitle: "Square it",
-    title: "|ψ|² is the probability density",
-    lead: "For one electron in this orbital, |ψ|² tells how the probability of finding the electron is distributed through space. Squaring removes the sign, so probability density cannot be negative.",
+    shortTitle: "Density after squaring",
+    title: "Density after squaring: |ψ|²",
+    lead: "For one electron in this orbital, |ψ|² tells how the probability of finding the electron is distributed through space. Squaring removes the sign, so a large negative ψ and a large positive ψ both produce large density. A node, where ψ = 0, produces zero density.",
     equation: "probability density = |ψ(x, y, z)|²",
     correction:
       "This teaching model is scaled, so the graph shows relative probability-density shape. A probability for a region comes from integrating |ψ|² over that region.",
@@ -56,6 +72,16 @@ const stages: readonly StageCopy[] = [
     correction:
       "Positive ψ is not positive charge, and negative ψ is not negative charge. The colors only keep track of relative phase.",
   },
+  {
+    id: "probability3d",
+    shortTitle: "Probability in 3D",
+    title: "From one point to a region of space",
+    lead: "The wavefunction assigns one signed amplitude to every point in three-dimensional space. Squaring that value gives probability density at the point. An actual probability belongs to a region, not to one exact mathematical point. The sampling box selects a finite volume, and the integral adds |ψ|² throughout that volume.",
+    equation:
+      "point (x, y, z) → ψ(x, y, z) → |ψ(x, y, z)|²     volume R → P(R) = ∭R |ψ|² dτ",
+    correction:
+      "ψ at the center is not the probability inside the box. |ψ|² at the center is a local density value. Probability requires adding density throughout the complete selected volume.",
+  },
 ] as const;
 
 const Y_MIN = -2.8;
@@ -66,6 +92,20 @@ const PSI_BASELINE = 156;
 const PSI_SCALE = 88;
 const DENSITY_BASELINE = 354;
 const DENSITY_SCALE = 86;
+const READOUT_LABELS: Record<ReadoutId, string> = {
+  location: "Location",
+  amplitude: "Wave amplitude",
+  magnitude: "Size of ψ",
+  density: "Probability density",
+};
+
+function defaultReadoutForStage(stageId: StageId): ReadoutId {
+  if (stageId === "magnitude") return "magnitude";
+  if (stageId === "density" || stageId === "sign" || stageId === "probability3d") {
+    return "density";
+  }
+  return "amplitude";
+}
 
 function yToSvg(y: number): number {
   return PLOT_LEFT + ((y - Y_MIN) / (Y_MAX - Y_MIN)) * (PLOT_RIGHT - PLOT_LEFT);
@@ -88,35 +128,316 @@ function makePath(values: readonly { y: number; svgY: number }[]): string {
     .join(" ");
 }
 
-function PsiPrimer() {
+function EquationTerm({
+  children,
+  description,
+  label,
+  value,
+}: {
+  children: ReactNode;
+  description: string;
+  label: string;
+  value?: string;
+}) {
+  const tooltipId = useId();
+
   return (
-    <section className="psi-primer" aria-label="Psi and probability density">
-      <div className="psi-primer__item">
-        <span className="psi-primer__symbol">ψ</span>
+    <span className="psi-equation-term-wrap">
+      <button
+        type="button"
+        className="psi-equation-term"
+        aria-describedby={tooltipId}
+        aria-label={label}
+      >
+        {children}
+      </button>
+      <span id={tooltipId} role="tooltip" className="psi-equation-tooltip">
+        <strong>{label}</strong>
+        {value ? <span className="psi-equation-tooltip__value">{value}</span> : null}
+        <span>{description}</span>
+      </span>
+    </span>
+  );
+}
+
+function EquationWorkbench({
+  activeReadout,
+  density,
+  magnitude,
+  overallSign,
+  psi,
+  probeY,
+}: {
+  activeReadout: ReadoutId;
+  density: number;
+  magnitude: number;
+  overallSign: PhaseSign;
+  psi: number;
+  probeY: number;
+}) {
+  const signValue = overallSign === 1 ? "+1" : "−1";
+  const exponentialValue = Math.exp((1 - probeY * probeY) / 2);
+  const ySquared = probeY * probeY;
+  const point = `(0, ${probeY.toFixed(2)}, 0)`;
+  const title = `${READOUT_LABELS[activeReadout]} equation`;
+  const summary =
+    activeReadout === "location"
+      ? "This fixes the point where the orbital function is being evaluated."
+      : activeReadout === "amplitude"
+        ? "This is the scaled pᵧ teaching function used by the graph and slider."
+        : activeReadout === "magnitude"
+          ? "This shows how much wave amplitude is present before squaring."
+          : "This squares the amplitude to make a relative probability-density value.";
+
+  return (
+    <section className="psi-equation-workbench" aria-label={title}>
+      <div className="psi-equation-workbench__header">
         <div>
-          <h3>Wave amplitude</h3>
-          <p>
-            Pronounced “sigh.” It can be positive, negative, or zero in these
-            real orbital pictures. Its sign records phase.
-          </p>
+          <span>Governing equation</span>
+          <h3>{title}</h3>
+        </div>
+        <p>{summary}</p>
+      </div>
+
+      <div className="psi-equation-workbench__body">
+        <div className="psi-equation-line" aria-label={`Equation for ${READOUT_LABELS[activeReadout]}`}>
+          {activeReadout === "location" ? (
+            <>
+              <EquationTerm
+                label="r squared"
+                value={`r² = ${ySquared.toFixed(4)}`}
+                description="Distance from the nucleus enters the fade-out part of the orbital. Along this slice, x and z are fixed at zero."
+              >
+                r²
+              </EquationTerm>{" "}
+              ={" "}
+              <EquationTerm
+                label="x coordinate"
+                value="x = 0"
+                description="We are not moving left or right; this view walks only along the y axis."
+              >
+                x²
+              </EquationTerm>{" "}
+              +{" "}
+              <EquationTerm
+                label="y coordinate"
+                value={`y = ${probeY.toFixed(2)}`}
+                description="This is the slider value. It chooses the point in the negative lobe, node, or positive lobe."
+              >
+                y²
+              </EquationTerm>{" "}
+              +{" "}
+              <EquationTerm
+                label="z coordinate"
+                value="z = 0"
+                description="We are staying in the orbital axis line, not moving above or below it."
+              >
+                z²
+              </EquationTerm>
+            </>
+          ) : activeReadout === "amplitude" ? (
+            <>
+              <EquationTerm
+                label="wave amplitude psi"
+                value={`ψ = ${formatSigned(psi)}`}
+                description="The signed wave-amplitude value at the selected point. Its sign is phase, not charge."
+              >
+                ψ(y)
+              </EquationTerm>{" "}
+              ={" "}
+              <EquationTerm
+                label="global phase sign"
+                value={`s = ${signValue}`}
+                description="This flips every sign in the orbital. It changes phase labels, not probability density."
+              >
+                s
+              </EquationTerm>{" "}
+              <EquationTerm
+                label="position on y axis"
+                value={`y = ${probeY.toFixed(2)}`}
+                description="The pᵧ part gives opposite signs on opposite sides of the nodal plane and zero at y = 0."
+              >
+                y
+              </EquationTerm>{" "}
+              <EquationTerm
+                label="Gaussian fade-out"
+                value={`e^((1 − y²)/2) = ${exponentialValue.toFixed(2)}`}
+                description="This makes the orbital fade as you move away from the nucleus. The scale is chosen so |ψ| reaches 1 near y = ±1."
+              >
+                e<sup>(1 − y²)/2</sup>
+              </EquationTerm>
+            </>
+          ) : activeReadout === "magnitude" ? (
+            <>
+              <EquationTerm
+                label="size of psi"
+                value={`|ψ| = ${magnitude.toFixed(2)}`}
+                description="This is how large the wave amplitude is at the selected point after ignoring whether the phase sign is positive or negative."
+              >
+                |ψ(y)|
+              </EquationTerm>{" "}
+              ={" "}
+              <EquationTerm
+                label="absolute value"
+                value={`abs(${formatSigned(psi)}) = ${magnitude.toFixed(2)}`}
+                description="Absolute value removes the sign. A large positive ψ and a large negative ψ both have large magnitude."
+              >
+                √(ψ(y)²)
+              </EquationTerm>
+            </>
+          ) : (
+            <>
+              <EquationTerm
+                label="relative probability density"
+                value={`ρ = ${density.toFixed(2)}`}
+                description="This scaled value is the relative density at one point, not the probability of finding the electron in a whole region."
+              >
+                ρ(y)
+              </EquationTerm>{" "}
+              ={" "}
+              <EquationTerm
+                label="squared magnitude"
+                value={`|ψ|² = ${magnitude.toFixed(2)}² = ${density.toFixed(2)}`}
+                description="Squaring removes the sign, so opposite phases can have the same density."
+              >
+                |ψ(y)|²
+              </EquationTerm>
+            </>
+          )}
+        </div>
+
+        <div className="psi-equation-substitution" aria-label="Live substitution values">
+          {activeReadout === "location" ? (
+            <>
+              <span>x = 0</span>
+              <span>y = {probeY.toFixed(2)}</span>
+              <span>z = 0</span>
+              <span>r² = {ySquared.toFixed(4)}</span>
+            </>
+          ) : activeReadout === "amplitude" ? (
+            <>
+              <span>s = {signValue}</span>
+              <span>y = {probeY.toFixed(2)}</span>
+              <span>fade = {exponentialValue.toFixed(2)}</span>
+              <span>ψ = {formatSigned(psi)}</span>
+            </>
+          ) : activeReadout === "magnitude" ? (
+            <>
+              <span>ψ = {formatSigned(psi)}</span>
+              <span>ψ² = {(psi * psi).toFixed(2)}</span>
+              <span>|ψ| = {magnitude.toFixed(2)}</span>
+            </>
+          ) : (
+            <>
+              <span>ψ = {formatSigned(psi)}</span>
+              <span>|ψ| = {magnitude.toFixed(2)}</span>
+              <span>|ψ|² = {density.toFixed(2)}</span>
+            </>
+          )}
+        </div>
+
+        <div className="psi-equation-answer">
+          <span>Answer for this box</span>
+          <strong>
+            {activeReadout === "location"
+              ? point
+              : activeReadout === "amplitude"
+                ? `ψ = ${formatSigned(psi)}`
+                : activeReadout === "magnitude"
+                  ? `|ψ| = ${magnitude.toFixed(2)}`
+                  : `|ψ|² = ${density.toFixed(2)}`}
+          </strong>
         </div>
       </div>
+    </section>
+  );
+}
+
+function PrimerCard({
+  children,
+  density = false,
+  expanded,
+  onToggle,
+  symbol,
+  title,
+}: {
+  children: ReactNode;
+  density?: boolean;
+  expanded: boolean;
+  onToggle: () => void;
+  symbol: ReactNode;
+  title: string;
+}) {
+  const bodyId = useId();
+
+  return (
+    <div className={`psi-primer__item${density ? " psi-primer__item--density" : ""}`}>
+      <span className="psi-primer__symbol">{symbol}</span>
+      <div className="psi-primer__content">
+        <h3>{title}</h3>
+        <div
+          id={bodyId}
+          className={`psi-primer__body${expanded ? " is-expanded" : ""}`}
+        >
+          <p>{children}</p>
+        </div>
+        <button
+          type="button"
+          className="psi-primer__toggle"
+          aria-controls={bodyId}
+          aria-expanded={expanded}
+          onClick={onToggle}
+        >
+          {expanded ? "less ↑" : "more ↓"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function PsiPrimer() {
+  const [expanded, setExpanded] = useState(false);
+  const toggleExpanded = () => setExpanded((current) => !current);
+
+  return (
+    <section
+      className={`psi-primer${expanded ? " psi-primer--expanded" : ""}`}
+      aria-label="Psi and probability density"
+    >
+      <PrimerCard
+        expanded={expanded}
+        onToggle={toggleExpanded}
+        symbol="ψ"
+        title="Wavefunction"
+      >
+        ψ, pronounced “sigh,” is the wavefunction. For an orbital, ψ is the
+        mathematical function behind the picture. Start here because everything
+        else depends on it: the sign of ψ gives phase, the size of ψ gives
+        amplitude, and |ψ|² gives electron density. When orbitals combine, their
+        ψ values are added point by point. That is why ψ has to come first
+        before nodes, bonding, antibonding, or MO energy diagrams make sense.
+      </PrimerCard>
       <span className="psi-primer__arrow" aria-hidden="true">
         square it →
       </span>
-      <div className="psi-primer__item psi-primer__item--density">
-        <span className="psi-primer__symbol">|ψ|²</span>
-        <div>
-          <h3>Probability density</h3>
-          <p>
-            This is the quantity connected to where an electron may be found.
-            It is never negative.
-          </p>
-        </div>
-      </div>
+      <PrimerCard
+        density
+        expanded={expanded}
+        onToggle={toggleExpanded}
+        symbol="|ψ|²"
+        title="Probability density"
+      >
+        |ψ|² is probability density. It comes from squaring the wavefunction, so
+        the sign of ψ disappears and the result is never negative. Start with ψ
+        to understand phase; square ψ to understand density. A high |ψ|² value
+        marks a region where the electron is more likely to be found, but
+        probability itself comes from adding density over a volume of space.
+      </PrimerCard>
       <p className="psi-primer__scale-note">
-        On this page, ψ is rescaled so the largest lobe has |ψ| = 1. That “1”
-        is a relative amplitude, not a 100% probability.
+        On this page, we are looking at one p orbital on one atom. We are not
+        yet at a real molecular orbital, but molecular orbitals start here, so
+        we will begin here. ψ is rescaled so the largest lobe has |ψ| = 1.
+        That “1” is a relative amplitude, not a 100% probability.
       </p>
     </section>
   );
@@ -336,7 +657,7 @@ function FunctionPlot({
             ψ is not probability.
           </text>
           <text x="360" y="364" textAnchor="middle">
-            Square it to obtain probability density: |ψ|².
+            Square it to obtain relative probability density: |ψ|².
           </text>
         </g>
       )}
@@ -467,8 +788,12 @@ export function PhaseLesson(props: LessonComponentProps) {
   const [stageIndex, setStageIndex] = useState(0);
   const [probeY, setProbeY] = useState(-1);
   const [overallSign, setOverallSign] = useState<PhaseSign>(1);
+  const [alpha, setAlpha] = useState(0.8);
 
   const stage = stages[stageIndex];
+  const [activeReadout, setActiveReadout] = useState<ReadoutId>(() =>
+    defaultReadoutForStage(stage.id),
+  );
   const psi = teachingPOrbital(probeY, overallSign);
   const magnitude = Math.abs(psi);
   const density = relativeDensity(psi);
@@ -476,9 +801,14 @@ export function PhaseLesson(props: LessonComponentProps) {
   const atFirstStage = stageIndex === 0;
   const atLastStage = stageIndex === stages.length - 1;
 
+  useEffect(() => {
+    setActiveReadout(defaultReadoutForStage(stage.id));
+  }, [stage.id]);
+
   const chooseStage = (index: number) => {
+    const targetStage = stages[index];
     setStageIndex(index);
-    if (index < stages.length - 1) {
+    if (targetStage.id !== "sign" && targetStage.id !== "probability3d") {
       setOverallSign(1);
     }
   };
@@ -499,12 +829,14 @@ export function PhaseLesson(props: LessonComponentProps) {
     props.onNext();
   };
 
-  const feedback = atNode
-    ? "The probe is in the xz nodal plane. Here ψ = 0, so the probability density |ψ|² is also zero."
-    : stage.id === "read"
+  const feedback = stage.id === "probability3d"
+    ? "The 3D step uses a normalized pᵧ function. Rotate the camera to inspect it, then move or resize the box to change the integrated probability."
+    : atNode
+      ? "The probe is in the xz nodal plane. Here ψ = 0, so the probability density |ψ|² is also zero."
+      : stage.id === "read"
       ? `At y = ${probeY.toFixed(2)}, ψ = ${formatSigned(psi)} on this scaled amplitude plot. That number is not a probability.`
       : stage.id === "magnitude"
-        ? `At this point, |ψ| = ${magnitude.toFixed(2)}. Magnitude ignores the sign but is still an amplitude.`
+        ? `At this point, |ψ| = ${magnitude.toFixed(2)}. This is the size of ψ before squaring; larger |ψ| can contribute more strongly to density after squaring.`
         : stage.id === "density"
           ? `Squaring gives |ψ|² = ${density.toFixed(2)}. This is the relative probability-density value at the selected point.`
           : `The sign is ${psi >= 0 ? "positive" : "negative"}, but the density is ${density.toFixed(2)}. Flip every sign and that density does not change.`;
@@ -550,8 +882,9 @@ export function PhaseLesson(props: LessonComponentProps) {
                 <p>
                   ψ is the input for prediction. Its size tells where electron
                   density can appear after squaring it. Its sign tells phase, so
-                  matching signs add and opposite signs cancel. That is why ψ,
-                  not just |ψ|², controls nodes, bonding, and antibonding.
+                  matching signs add and opposite signs cancel. You will learn
+                  more about this in the next lesson, but that is why ψ, not
+                  just |ψ|², controls nodes, bonding, and antibonding.
                 </p>
               </aside>
             ) : null}
@@ -562,94 +895,142 @@ export function PhaseLesson(props: LessonComponentProps) {
           </p>
         </section>
 
-        <div className="psi-visual-grid">
-          <section className="psi-plot-card">
-            <FunctionPlot probeY={probeY} stage={stage.id} overallSign={overallSign} />
-          </section>
-          <section className="psi-orbital-card">
-            <OrbitalCartoon probeY={probeY} overallSign={overallSign} />
-            <p>
-              This is a conventional contour-style cartoon. The lobe surfaces are
-              not hard boundaries; they show where the orbital amplitude is large
-              enough to draw.
-            </p>
-          </section>
-        </div>
-
-        <section className="psi-probe-controls" aria-label="Orbital probe controls">
-          <div className="psi-slider-row">
-            <label htmlFor="psi-probe-y">
-              Move the probe along the pᵧ lobe axis
-              <span>y = {probeY.toFixed(2)}</span>
-            </label>
-            <input
-              id="psi-probe-y"
-              type="range"
-              min={Y_MIN}
-              max={Y_MAX}
-              step="0.05"
-              value={probeY}
-              onChange={(event: ChangeEvent<HTMLInputElement>) =>
-                setProbeY(Number(event.target.value))
-              }
+        {stage.id === "probability3d" ? (
+          <Suspense
+            fallback={
+              <div className="orbital3d-loading" role="status">
+                Loading the 3D probability explorer…
+              </div>
+            }
+          >
+            <LazyPyOrbitalExplorer
+              alpha={alpha}
+              globalPhase={overallSign}
+              onAlphaChange={setAlpha}
+              onGlobalPhaseChange={setOverallSign}
             />
-          </div>
-          <div className="psi-preset-buttons" aria-label="Probe position presets">
-            <button type="button" onClick={() => setProbeY(-1)}>
-              −y lobe
-            </button>
-            <button type="button" onClick={() => setProbeY(0)}>
-              node
-            </button>
-            <button type="button" onClick={() => setProbeY(1)}>
-              +y lobe
-            </button>
-          </div>
-          {stage.id === "sign" ? (
-            <div className="psi-sign-toggle" aria-label="Global phase sign">
-              <span>Flip every sign:</span>
-              <button
-                type="button"
-                className={overallSign === 1 ? "is-active" : ""}
-                onClick={() => setOverallSign(1)}
-                aria-pressed={overallSign === 1}
-              >
-                original signs
-              </button>
-              <button
-                type="button"
-                className={overallSign === -1 ? "is-active" : ""}
-                onClick={() => setOverallSign(-1)}
-                aria-pressed={overallSign === -1}
-              >
-                flip all signs
-              </button>
+          </Suspense>
+        ) : (
+          <>
+            <div className="psi-visual-grid">
+              <section className="psi-plot-card">
+                <FunctionPlot probeY={probeY} stage={stage.id} overallSign={overallSign} />
+              </section>
+              <section className="psi-orbital-card">
+                <OrbitalCartoon probeY={probeY} overallSign={overallSign} />
+                <p>
+                  This is a conventional contour-style cartoon. The lobe
+                  surfaces are not hard boundaries; they show where the orbital
+                  amplitude is large enough to draw.
+                </p>
+              </section>
             </div>
-          ) : null}
-        </section>
 
-        <section className="psi-readout-grid" aria-label="Values at the selected point">
-          <article>
-            <span>Location</span>
-            <strong>y = {probeY.toFixed(2)}</strong>
-            <p>One point on the horizontal y axis.</p>
-          </article>
-          <article className={stage.id === "read" ? "is-emphasized" : ""}>
-            <span>Wave amplitude</span>
-            <strong>ψ = {formatSigned(psi)}</strong>
-            <p>Signed and scaled. This is not probability.</p>
-          </article>
-          <article className={stage.id === "magnitude" ? "is-emphasized" : ""}>
-            <span>Magnitude</span>
-            <strong>|ψ| = {magnitude.toFixed(2)}</strong>
-            <p>Distance from zero; sign removed.</p>
-          </article>
-          <article className={stage.id === "density" || stage.id === "sign" ? "is-emphasized" : ""}>
-            <span>Probability density</span>
-            <strong>|ψ|² = {density.toFixed(2)}</strong>
-            <p>Relative density in this scaled teaching model.</p>
-          </article>
-        </section>
+            <section className="psi-probe-controls" aria-label="Orbital probe controls">
+              <div className="psi-slider-row">
+                <label htmlFor="psi-probe-y">
+                  Move the probe along the pᵧ lobe axis
+                  <span>y = {probeY.toFixed(2)}</span>
+                </label>
+                <input
+                  id="psi-probe-y"
+                  type="range"
+                  min={Y_MIN}
+                  max={Y_MAX}
+                  step="0.05"
+                  value={probeY}
+                  onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                    setProbeY(Number(event.target.value))
+                  }
+                />
+              </div>
+              <div className="psi-preset-buttons" aria-label="Probe position presets">
+                <button type="button" onClick={() => setProbeY(-1)}>
+                  −y lobe
+                </button>
+                <button type="button" onClick={() => setProbeY(0)}>
+                  node
+                </button>
+                <button type="button" onClick={() => setProbeY(1)}>
+                  +y lobe
+                </button>
+              </div>
+              {stage.id === "sign" ? (
+                <div className="psi-sign-toggle" aria-label="Global phase sign">
+                  <span>Flip every sign:</span>
+                  <button
+                    type="button"
+                    className={overallSign === 1 ? "is-active" : ""}
+                    onClick={() => setOverallSign(1)}
+                    aria-pressed={overallSign === 1}
+                  >
+                    original signs
+                  </button>
+                  <button
+                    type="button"
+                    className={overallSign === -1 ? "is-active" : ""}
+                    onClick={() => setOverallSign(-1)}
+                    aria-pressed={overallSign === -1}
+                  >
+                    flip all signs
+                  </button>
+                </div>
+              ) : null}
+            </section>
+
+            <EquationWorkbench
+              activeReadout={activeReadout}
+              density={density}
+              magnitude={magnitude}
+              overallSign={overallSign}
+              psi={psi}
+              probeY={probeY}
+            />
+
+            <section className="psi-readout-grid" aria-label="Values at the selected point">
+              <button
+                type="button"
+                className={`psi-readout-card${activeReadout === "location" ? " is-emphasized" : ""}`}
+                onClick={() => setActiveReadout("location")}
+                aria-pressed={activeReadout === "location"}
+              >
+                <span>Location</span>
+                <strong>y = {probeY.toFixed(2)}</strong>
+                <p>One point on the horizontal y axis.</p>
+              </button>
+              <button
+                type="button"
+                className={`psi-readout-card${activeReadout === "amplitude" ? " is-emphasized" : ""}`}
+                onClick={() => setActiveReadout("amplitude")}
+                aria-pressed={activeReadout === "amplitude"}
+              >
+                <span>Wave amplitude</span>
+                <strong>ψ = {formatSigned(psi)}</strong>
+                <p>Signed and scaled. This is not probability.</p>
+              </button>
+              <button
+                type="button"
+                className={`psi-readout-card${activeReadout === "magnitude" ? " is-emphasized" : ""}`}
+                onClick={() => setActiveReadout("magnitude")}
+                aria-pressed={activeReadout === "magnitude"}
+              >
+                <span>Size of ψ</span>
+                <strong>|ψ| = {magnitude.toFixed(2)}</strong>
+                <p>How much amplitude is present before squaring.</p>
+              </button>
+              <button
+                type="button"
+                className={`psi-readout-card${activeReadout === "density" ? " is-emphasized" : ""}`}
+                onClick={() => setActiveReadout("density")}
+                aria-pressed={activeReadout === "density"}
+              >
+                <span>Probability density</span>
+                <strong>|ψ|² = {density.toFixed(2)}</strong>
+                <p>Relative density in this scaled teaching model.</p>
+              </button>
+            </section>
+          </>
+        )}
 
         <details className="psi-going-deeper">
           <summary>Why a textbook p-orbital picture looks like two lobes</summary>
