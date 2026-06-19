@@ -1,0 +1,36 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "dev: vite",
+      "type": "shell",
+      "command": "npm run dev -- --port 5176",
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "panel": "dedicated",
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "test",
+      "type": "npm",
+      "script": "test",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "lint",
+      "type": "npm",
+      "script": "lint",
+      "problemMatcher": []
+    },
+    {
+      "label": "build",
+      "type": "npm",
+      "script": "build",
+      "group": "build",
+      "problemMatcher": "$tsc"
+    }
+  ]
+}
