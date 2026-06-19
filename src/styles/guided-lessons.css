@@ -640,6 +640,86 @@
   stroke-width: 2;
 }
 
+.combine-py-note,
+.combine-py-center-label {
+  fill: #6f675e;
+  font-size: 12px;
+  font-weight: 760;
+}
+
+.combine-py-axis {
+  stroke: rgba(70, 63, 55, 0.72);
+  stroke-width: 2;
+}
+
+.combine-py-nodal-plane {
+  stroke: rgba(70, 63, 55, 0.42);
+  stroke-width: 2;
+  stroke-dasharray: 6 5;
+}
+
+.combine-py-lobe {
+  stroke: rgba(35, 31, 26, 0.34);
+  stroke-width: 2;
+  opacity: 0.9;
+}
+
+.combine-py-lobe--positive {
+  fill: rgba(31, 111, 178, 0.76);
+}
+
+.combine-py-lobe--negative {
+  fill: rgba(213, 106, 45, 0.74);
+}
+
+.combine-py-nucleus-ring {
+  fill: #fffdf8;
+  stroke: #fff;
+  stroke-width: 3;
+}
+
+.combine-py-nucleus {
+  fill: #2e2a26;
+  stroke: #fff;
+  stroke-width: 1.5;
+}
+
+.combine-py-sign {
+  fill: #fff;
+  font-size: 40px;
+  font-weight: 900;
+  pointer-events: none;
+}
+
+.combine-py-overlap {
+  stroke: rgba(255, 255, 255, 0.84);
+  stroke-width: 3;
+  opacity: 0.42;
+  mix-blend-mode: multiply;
+}
+
+.combine-py-overlap--positive {
+  fill: var(--positive);
+}
+
+.combine-result-overlap {
+  opacity: 0.34;
+}
+
+.combine-py-highlight {
+  stroke-width: 5;
+}
+
+.combine-py-highlight--positive {
+  fill: rgba(31, 111, 178, 0.14);
+  stroke: var(--positive);
+}
+
+.combine-py-highlight--node {
+  fill: #fffdf8;
+  stroke: #4a4140;
+}
+
 .combination-diagram-wrap {
   display: grid;
   gap: 8px;
@@ -868,9 +948,9 @@
 }
 
 .combine-result-atom {
-  fill: #fff;
-  font-size: 10px;
-  font-weight: 900;
+  fill: var(--ink);
+  font-size: 11px;
+  font-weight: 760;
 }
 
 .combine-weight-label,
@@ -930,4 +1010,252 @@
 .combine-values-caption small {
   color: #766e65;
   font-size: 0.78rem;
+}
+
+.combine-equation-workbench {
+  display: grid;
+  gap: 14px;
+  margin-top: 12px;
+  padding: 16px;
+  background: #fffdf8;
+  border: 1px solid #ded3c5;
+  border-radius: 14px;
+}
+
+.combine-equation-header {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(260px, 1fr);
+  gap: 12px;
+  align-items: end;
+}
+
+.combine-equation-header span,
+.combine-equation-answer span {
+  display: block;
+  color: #746a60;
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.combine-equation-header h3 {
+  margin: 3px 0 0;
+  color: #29241f;
+  font-size: 1.05rem;
+}
+
+.combine-equation-header p,
+.combine-equation-note,
+.combine-equation-answer p {
+  margin: 0;
+  color: #665e56;
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.combine-equation-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.combine-equation-tabs button {
+  min-height: 42px;
+  padding: 8px 10px;
+  color: #4f4943;
+  background: #f5f1ea;
+  border: 1px solid #d8d0c5;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.combine-equation-tabs button:hover,
+.combine-equation-tabs button:focus-visible {
+  color: #1f2925;
+  background: #f1eadf;
+}
+
+.combine-equation-tabs button.is-active {
+  color: #fff;
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.combine-equation-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(210px, 0.34fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.combine-equation-line {
+  min-width: 0;
+  padding: 14px 16px;
+  overflow-wrap: anywhere;
+  color: #25211e;
+  background: #f7f4ee;
+  border: 1px solid #d9d0c2;
+  border-radius: 13px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.05rem, 2.1vw, 1.48rem);
+  font-weight: 700;
+  line-height: 1.9;
+}
+
+.combine-equation-line sub,
+.combine-equation-line sup {
+  font-size: 0.58em;
+}
+
+.combine-equation-term-wrap {
+  position: relative;
+  display: inline-flex;
+  vertical-align: baseline;
+}
+
+.combine-equation-term {
+  min-height: 0;
+  padding: 1px 5px 2px;
+  color: #173b35;
+  background: #eef8f6;
+  border: 1px solid #9dbeb6;
+  border-radius: 7px;
+  font: inherit;
+  line-height: 1.15;
+  cursor: help;
+}
+
+.combine-equation-term:hover,
+.combine-equation-term:focus-visible {
+  background: #dff0ec;
+  border-color: #5e9185;
+}
+
+.combine-equation-tooltip {
+  position: absolute;
+  z-index: 30;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  display: grid;
+  gap: 5px;
+  width: min(260px, 78vw);
+  padding: 10px 11px;
+  color: #fdfbf7;
+  background: #25372f;
+  border-radius: 10px;
+  box-shadow: 0 14px 34px rgba(35, 31, 27, 0.2);
+  font-family: system-ui, sans-serif;
+  font-size: 0.78rem;
+  font-weight: 550;
+  line-height: 1.35;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 6px);
+  transition: opacity 130ms ease, transform 130ms ease;
+}
+
+.combine-equation-tooltip strong {
+  color: #ffd783;
+  font-size: 0.74rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.combine-equation-tooltip__value {
+  color: #fff5d8;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-weight: 800;
+}
+
+.combine-equation-term:hover + .combine-equation-tooltip,
+.combine-equation-term:focus + .combine-equation-tooltip,
+.combine-equation-term:focus-visible + .combine-equation-tooltip {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.combine-equation-answer {
+  display: grid;
+  gap: 7px;
+  align-content: center;
+  padding: 14px;
+  background: #edf5f1;
+  border: 1px solid #b9d2c7;
+  border-radius: 13px;
+}
+
+.combine-equation-answer strong {
+  color: #1e2a25;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.08rem, 1.8vw, 1.38rem);
+  font-variant-numeric: tabular-nums;
+}
+
+.combine-equation-substitution {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
+  grid-column: 1 / -1;
+}
+
+.combine-equation-substitution span {
+  min-width: 0;
+  padding: 8px 9px;
+  overflow-wrap: anywhere;
+  color: #3f382f;
+  background: #fff7dd;
+  border: 1px solid #ead6a3;
+  border-radius: 9px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.82rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 900px) {
+  .combine-equation-header,
+  .combine-equation-body {
+    grid-template-columns: 1fr;
+  }
+
+  .combine-equation-substitution {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .combine-equation-workbench {
+    padding: 12px;
+  }
+
+  .combine-equation-tabs,
+  .combine-equation-substitution {
+    grid-template-columns: 1fr;
+  }
+
+  .combine-equation-line {
+    padding: 12px;
+    font-size: 1.02rem;
+    line-height: 1.95;
+  }
+
+  .combine-equation-tooltip {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    bottom: auto;
+    left: 12px;
+    width: auto;
+    transform: translateY(6px);
+  }
+
+  .combine-equation-term:hover + .combine-equation-tooltip,
+  .combine-equation-term:focus + .combine-equation-tooltip,
+  .combine-equation-term:focus-visible + .combine-equation-tooltip {
+    transform: translateY(0);
+  }
 }

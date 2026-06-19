@@ -71,6 +71,18 @@ afterEach(() => {
 });
 
 describe("Lesson 1 probability in 3D step", () => {
+  it("introduces wavefunction, density, and regional probability in the primer bridge", () => {
+    const target = renderLesson();
+
+    expect(target.textContent).toContain("Wavefunction");
+    expect(target.textContent).toContain("SQUARE IT →");
+    expect(target.textContent).toContain("Probability density");
+    expect(target.textContent).toContain("INTEGRATE IT →");
+    expect(target.textContent).toContain("Probability in a region");
+    expect(target.textContent).toContain("|ψ|² is density at a point");
+    expect(target.textContent).toContain("probability in a region");
+  });
+
   it("renders the fifth guided step and the volume-integral copy", async () => {
     const target = renderLesson();
 
@@ -79,29 +91,38 @@ describe("Lesson 1 probability in 3D step", () => {
 
     expect(target.textContent).toMatch(/Step 5 of 5/i);
     expect(target.textContent).toContain("From one point to a region of space");
-    expect(target.textContent).toContain("P(R) = ∭R |ψ|² dτ");
-    expect(target.textContent).toContain("Show one p orbital at a time");
-    expect(target.textContent).toContain("pₓ");
-    expect(target.textContent).toContain("pᵧ");
-    expect(target.textContent).toContain("p_z");
+    expect(target.textContent).toContain("P(R) = ∭R |ψ|2 dτ");
+    expect(target.querySelector(".psi-stage-equation sup")).toBeTruthy();
+    expect(target.textContent).toContain("Start with py, then compare the p shell");
+    expect(target.querySelector('button[aria-label="Show p y orbital only"]')).toBeTruthy();
+    expect(
+      target.querySelector('button[aria-label="Show p x p y and p z shell overview"]'),
+    ).toBeTruthy();
+    expect(target.textContent).not.toContain("p_z");
+    expect(target.textContent).not.toContain("e^");
   });
 
-  it("defaults to p-y and updates the displayed equation when another p orbital is selected", async () => {
+  it("defaults to p-y and switches to the p-shell density overview", async () => {
     const target = renderLesson();
     await goToProbabilityStep(target);
 
-    expect(target.textContent).toContain("This view is currently using i = y");
+    expect(target.textContent).toContain("ψpy(x, y, z) = N y");
+    expect(target.textContent).toContain("signed wave amplitude at the center");
 
-    const pzButton = target.querySelector('button[aria-label="Show p z orbital"]');
-    expect(pzButton).toBeTruthy();
+    const shellButton = target.querySelector(
+      'button[aria-label="Show p x p y and p z shell overview"]',
+    );
+    expect(shellButton).toBeTruthy();
 
     await act(async () => {
-      pzButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      shellButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
       await Promise.resolve();
     });
 
-    expect(target.textContent).toContain("This view is currently using i = z");
-    expect(target.textContent).toContain("ψp_z(x,y,z) = N z");
+    expect(target.textContent).toContain("ψpi(x, y, z) = N i");
+    expect(target.textContent).toContain("component amplitudes at the center");
+    expect(target.textContent).toContain("average p-shell density at the center");
+    expect(target.textContent).toContain("probability inside the selected average p-shell density");
   });
 
   it("labels center density as density and box probability as volume probability", async () => {
@@ -165,6 +186,13 @@ describe("Lesson 1 probability in 3D step", () => {
     expect(target.textContent).toContain("The 3D WebGL view is unavailable here");
     expect(target.textContent).toContain("Live values");
     expect(target.querySelector("#orbital3d-y-center")).toBeTruthy();
-    expect(target.textContent).toContain("P(all space) = 1");
+    expect(target.textContent).toContain("signed wave amplitude at the center");
+    expect(target.textContent).toContain("local probability density at the center");
+    expect(target.textContent).toContain("box volume");
+    expect(target.textContent).toContain("probability of finding the electron somewhere inside this volume");
+    expect(target.textContent).not.toContain("box center");
+    expect(target.textContent).not.toContain("box bounds");
+    expect(target.textContent).not.toContain("probability outside box");
+    expect(target.textContent).not.toContain("all-space normalization");
   });
 });

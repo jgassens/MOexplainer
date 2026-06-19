@@ -1,15 +1,19 @@
 import {
   boxBounds,
   boxVolume,
+  P_ORBITAL_AXES,
   pOrbitalDensity,
   probabilityInPOrbitalBox,
-  pyNormalizationConstant,
+  probabilityInAveragePShellBox,
+  pShellAverageDensity,
   pOrbitalWavefunction,
   type AxisAlignedBox3D,
   type GlobalPhaseSign,
   type POrbitalAxis,
 } from "../../models/pyOrbital3d";
 import type { ReactNode } from "react";
+import { OrbitalWavefunctionLabel } from "./OrbitalNotation";
+import type { Orbital3DViewMode } from "./orbital3dViewMode";
 
 export type IntegralHighlight = "x" | "y" | "z" | "alpha" | "phase" | null;
 
@@ -19,6 +23,7 @@ interface Orbital3DLiveValuesProps {
   globalPhase: GlobalPhaseSign;
   highlight: IntegralHighlight;
   orbitalAxis: POrbitalAxis;
+  viewMode: Orbital3DViewMode;
 }
 
 function formatValue(value: number, digits = 4) {
@@ -30,16 +35,6 @@ function formatValue(value: number, digits = 4) {
 function formatSignedValue(value: number) {
   if (Math.abs(value) < 1e-9) return "0";
   return `${value > 0 ? "+" : "−"}${formatValue(Math.abs(value), 4)}`;
-}
-
-function formatBounds(lower: number, upper: number) {
-  return `[${lower.toFixed(2)}, ${upper.toFixed(2)}]`;
-}
-
-function orbitalLabel(axis: POrbitalAxis) {
-  if (axis === "x") return "pₓ";
-  if (axis === "y") return "pᵧ";
-  return "p_z";
 }
 
 function Highlighted({
@@ -58,14 +53,22 @@ export function Orbital3DLiveValues({
   globalPhase,
   highlight,
   orbitalAxis,
+  viewMode,
 }: Orbital3DLiveValuesProps) {
   const bounds = boxBounds(box);
+  const isShellView = viewMode === "shell";
   const psiAtCenter = pOrbitalWavefunction(box.center, alpha, orbitalAxis, globalPhase);
-  const densityAtCenter = pOrbitalDensity(box.center, alpha, orbitalAxis);
-  const probability = probabilityInPOrbitalBox(box, alpha, orbitalAxis);
-  const outside = 1 - probability;
+  const componentPsiAtCenter = P_ORBITAL_AXES.map((axis) => ({
+    axis,
+    value: pOrbitalWavefunction(box.center, alpha, axis, globalPhase),
+  }));
+  const densityAtCenter = isShellView
+    ? pShellAverageDensity(box.center, alpha)
+    : pOrbitalDensity(box.center, alpha, orbitalAxis);
+  const probability = isShellView
+    ? probabilityInAveragePShellBox(box, alpha)
+    : probabilityInPOrbitalBox(box, alpha, orbitalAxis);
   const percent = probability * 100;
-  const normalization = pyNormalizationConstant(alpha);
 
   return (
     <section className="orbital3d-live" aria-label="Live probability calculation values">
@@ -75,19 +78,35 @@ export function Orbital3DLiveValues({
       </div>
 
       <div className="orbital3d-integral" aria-label="Definite integral with live bounds">
-        <p>
-          P(box) ={" "}
-          <Highlighted active={highlight === "x"}>
-            ∫<sub>{bounds.x1.toFixed(2)}</sub><sup>{bounds.x2.toFixed(2)}</sup>
-          </Highlighted>{" "}
-          <Highlighted active={highlight === "y"}>
-            ∫<sub>{bounds.y1.toFixed(2)}</sub><sup>{bounds.y2.toFixed(2)}</sup>
-          </Highlighted>{" "}
-          <Highlighted active={highlight === "z"}>
-            ∫<sub>{bounds.z1.toFixed(2)}</sub><sup>{bounds.z2.toFixed(2)}</sup>
-          </Highlighted>{" "}
-          |ψ<sub>{orbitalLabel(orbitalAxis)}</sub>(x,y,z)|² dz dy dx
-        </p>
+        {isShellView ? (
+          <p>
+            P<sub>p shell</sub>(box) ={" "}
+            <Highlighted active={highlight === "x"}>
+              ∫<sub>{bounds.x1.toFixed(2)}</sub><sup>{bounds.x2.toFixed(2)}</sup>
+            </Highlighted>{" "}
+            <Highlighted active={highlight === "y"}>
+              ∫<sub>{bounds.y1.toFixed(2)}</sub><sup>{bounds.y2.toFixed(2)}</sup>
+            </Highlighted>{" "}
+            <Highlighted active={highlight === "z"}>
+              ∫<sub>{bounds.z1.toFixed(2)}</sub><sup>{bounds.z2.toFixed(2)}</sup>
+            </Highlighted>{" "}
+            ρ<sub>p,avg</sub>(x, y, z) dz dy dx
+          </p>
+        ) : (
+          <p>
+            P<sub>y</sub>(box) ={" "}
+            <Highlighted active={highlight === "x"}>
+              ∫<sub>{bounds.x1.toFixed(2)}</sub><sup>{bounds.x2.toFixed(2)}</sup>
+            </Highlighted>{" "}
+            <Highlighted active={highlight === "y"}>
+              ∫<sub>{bounds.y1.toFixed(2)}</sub><sup>{bounds.y2.toFixed(2)}</sup>
+            </Highlighted>{" "}
+            <Highlighted active={highlight === "z"}>
+              ∫<sub>{bounds.z1.toFixed(2)}</sub><sup>{bounds.z2.toFixed(2)}</sup>
+            </Highlighted>{" "}
+            |<OrbitalWavefunctionLabel axis={orbitalAxis} />(x, y, z)|² dz dy dx
+          </p>
+        )}
         <p>
           = <strong>{formatValue(probability, 5)}</strong> ={" "}
           <strong>{percent.toFixed(2)}% inside the selected volume</strong>
@@ -95,25 +114,38 @@ export function Orbital3DLiveValues({
       </div>
 
       <div className="orbital3d-live__grid">
+        {isShellView ? (
+          <article className={highlight === "phase" ? "is-highlighted" : undefined}>
+            <span>component amplitudes at the center</span>
+            {componentPsiAtCenter.map((component) => (
+              <strong key={component.axis}>
+                <OrbitalWavefunctionLabel axis={component.axis} /> ={" "}
+                {formatSignedValue(component.value)}
+              </strong>
+            ))}
+          </article>
+        ) : (
+          <article className={highlight === "phase" ? "is-highlighted" : undefined}>
+            <span>signed wave amplitude at the center</span>
+            <strong>
+              <OrbitalWavefunctionLabel axis={orbitalAxis} /> = {formatSignedValue(psiAtCenter)}
+            </strong>
+          </article>
+        )}
         <article>
-          <span>box center</span>
+          <span>
+            {isShellView
+              ? "average p-shell density at the center"
+              : "local probability density at the center"}
+          </span>
           <strong>
-            ({box.center.x.toFixed(2)}, {box.center.y.toFixed(2)}, {box.center.z.toFixed(2)})
-          </strong>
-        </article>
-        <article className={highlight === "phase" ? "is-highlighted" : undefined}>
-          <span>signed wave amplitude at the center</span>
-          <strong>ψ<sub>{orbitalLabel(orbitalAxis)}</sub> = {formatSignedValue(psiAtCenter)}</strong>
-        </article>
-        <article>
-          <span>local probability density at the center</span>
-          <strong>|ψ|² = {formatValue(densityAtCenter, 5)}</strong>
-        </article>
-        <article>
-          <span>box bounds</span>
-          <strong>
-            {formatBounds(bounds.x1, bounds.x2)} × {formatBounds(bounds.y1, bounds.y2)} ×{" "}
-            {formatBounds(bounds.z1, bounds.z2)}
+            {isShellView ? (
+              <>
+                ρ<sub>p,avg</sub> = {formatValue(densityAtCenter, 5)}
+              </>
+            ) : (
+              <>|ψ|² = {formatValue(densityAtCenter, 5)}</>
+            )}
           </strong>
         </article>
         <article>
@@ -121,18 +153,22 @@ export function Orbital3DLiveValues({
           <strong>ΔV = {formatValue(boxVolume(box), 4)}</strong>
         </article>
         <article className="orbital3d-live__probability">
-          <span>probability of finding the electron somewhere inside this volume</span>
-          <strong>P(box) = {formatValue(probability, 5)}</strong>
+          <span>
+            {isShellView
+              ? "probability inside the selected average p-shell density"
+              : "probability of finding the electron somewhere inside this volume"}
+          </span>
+          <strong>
+            {isShellView ? (
+              <>
+                P<sub>p shell</sub>
+              </>
+            ) : (
+              "P"
+            )}
+            (box) = {formatValue(probability, 5)}
+          </strong>
           <em>{percent.toFixed(2)}%</em>
-        </article>
-        <article>
-          <span>probability outside box</span>
-          <strong>1 − P(box) = {formatValue(outside, 5)}</strong>
-        </article>
-        <article className={highlight === "alpha" ? "is-highlighted" : undefined}>
-          <span>all-space normalization</span>
-          <strong>P(all space) = 1</strong>
-          <em>N(α) = {formatValue(normalization, 4)}</em>
         </article>
       </div>
     </section>

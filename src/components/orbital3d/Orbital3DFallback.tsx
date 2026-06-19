@@ -3,11 +3,13 @@ import type {
   GlobalPhaseSign,
   POrbitalAxis,
 } from "../../models/pyOrbital3d";
+import type { Orbital3DViewMode } from "./orbital3dViewMode";
 
 interface Orbital3DFallbackProps {
   box: AxisAlignedBox3D;
   globalPhase: GlobalPhaseSign;
   orbitalAxis: POrbitalAxis;
+  viewMode?: Orbital3DViewMode;
 }
 
 function projectX(value: number) {
@@ -27,6 +29,7 @@ export function Orbital3DFallback({
   box,
   globalPhase,
   orbitalAxis,
+  viewMode = "py",
 }: Orbital3DFallbackProps) {
   const positiveLabel = globalPhase === 1 ? "+" : "−";
   const negativeLabel = globalPhase === 1 ? "−" : "+";
@@ -47,11 +50,18 @@ export function Orbital3DFallback({
     <div
       className="orbital3d-fallback"
       role="img"
-      aria-label="Fallback two-dimensional projection of the selected p orbital and sampling box"
+      aria-label={
+        viewMode === "shell"
+          ? "Fallback two-dimensional projection for the p-shell density overview and sampling box"
+          : "Fallback two-dimensional projection of the selected p orbital and sampling box"
+      }
     >
       <p>
         The 3D WebGL view is unavailable here, but the calculation, controls,
-        and live probability values still work.
+        and live probability values still work.{" "}
+        {viewMode === "shell"
+          ? "This fallback shows the p-y cross-section while the equations use the p-shell density."
+          : null}
       </p>
       <svg viewBox="0 0 520 300" aria-hidden="true">
         <rect x="12" y="12" width="496" height="276" rx="18" className="orbital3d-fallback__frame" />

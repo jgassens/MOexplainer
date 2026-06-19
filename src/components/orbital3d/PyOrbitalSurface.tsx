@@ -73,11 +73,13 @@ export function PyOrbitalSurface({
   alpha,
   globalPhase,
   orbitalAxis,
+  opacity = 0.86,
   resolution,
 }: {
   alpha: number;
   globalPhase: GlobalPhaseSign;
   orbitalAxis: POrbitalAxis;
+  opacity?: number;
   resolution: number;
 }) {
   const positiveGeometry = useMemo(
@@ -95,10 +97,10 @@ export function PyOrbitalSurface({
         roughness: 0.82,
         metalness: 0,
         transparent: true,
-        opacity: 0.86,
+        opacity,
         side: DoubleSide,
       }),
-    [],
+    [opacity],
   );
   const negativeMaterial = useMemo(
     () =>
@@ -107,10 +109,10 @@ export function PyOrbitalSurface({
         roughness: 0.82,
         metalness: 0,
         transparent: true,
-        opacity: 0.86,
+        opacity,
         side: DoubleSide,
       }),
-    [],
+    [opacity],
   );
 
   useEffect(

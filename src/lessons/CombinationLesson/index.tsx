@@ -1,9 +1,10 @@
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState, type ReactNode } from "react";
 import { LessonShell } from "../../components/LessonShell/LessonShell";
 import type { LessonComponentProps } from "../types";
 
 type Phase = 1 | -1;
 type StageId = "one-point" | "all-space" | "weights";
+type CombinationEquationMode = "mo" | "density" | "cross";
 
 interface StageCopy {
   id: StageId;
@@ -36,6 +37,71 @@ const stages: readonly StageCopy[] = [
 function formatNumber(value: number): string {
   if (Math.abs(value) < 0.005) return "0.00";
   return `${value > 0 ? "+" : "−"}${Math.abs(value).toFixed(2)}`;
+}
+
+function formatPlainNumber(value: number): string {
+  if (Math.abs(value) < 0.005) return "0.00";
+  return value.toFixed(2);
+}
+
+function formatSignWord(value: number): string {
+  if (Math.abs(value) < 0.005) return "zero";
+  return value > 0 ? "positive" : "negative";
+}
+
+function oppositePhase(sign: Phase): Phase {
+  return sign === 1 ? -1 : 1;
+}
+
+function phaseClass(sign: Phase): "positive" | "negative" {
+  return sign === 1 ? "positive" : "negative";
+}
+
+function phaseLabel(sign: Phase): "+" | "−" {
+  return sign === 1 ? "+" : "−";
+}
+
+function PyOrbitalGlyph({
+  centerX,
+  centerY,
+  facingSign,
+  orientation,
+  scale = 1,
+}: {
+  centerX: number;
+  centerY: number;
+  facingSign: Phase;
+  orientation: "right" | "left";
+  scale?: number;
+}) {
+  const leftSign = orientation === "right" ? oppositePhase(facingSign) : facingSign;
+  const rightSign = orientation === "right" ? facingSign : oppositePhase(facingSign);
+
+  return (
+    <g
+      className="combine-py-orbital"
+      transform={`translate(${centerX} ${centerY}) scale(${scale})`}
+    >
+      <line x1="-162" x2="162" y1="0" y2="0" className="combine-py-axis" />
+      <line x1="0" x2="0" y1="-68" y2="68" className="combine-py-nodal-plane" />
+      <path
+        d="M -2 0 C -34 -45 -90 -58 -150 -43 C -187 -34 -187 34 -150 43 C -90 58 -34 45 -2 0 Z"
+        className={`combine-py-lobe combine-py-lobe--${phaseClass(leftSign)}`}
+      />
+      <path
+        d="M 2 0 C 34 -45 90 -58 150 -43 C 187 -34 187 34 150 43 C 90 58 34 45 2 0 Z"
+        className={`combine-py-lobe combine-py-lobe--${phaseClass(rightSign)}`}
+      />
+      <circle cx="0" cy="0" r="12" className="combine-py-nucleus-ring" />
+      <circle cx="0" cy="0" r="8" className="combine-py-nucleus" />
+      <text x="-82" y="13" textAnchor="middle" className="combine-py-sign">
+        {phaseLabel(leftSign)}
+      </text>
+      <text x="82" y="13" textAnchor="middle" className="combine-py-sign">
+        {phaseLabel(rightSign)}
+      </text>
+    </g>
+  );
 }
 
 function PointAddition({
@@ -85,59 +151,355 @@ function PointAddition({
   );
 }
 
+function CombinationEquationTerm({
+  children,
+  description,
+  label,
+  value,
+}: {
+  children: ReactNode;
+  description: string;
+  label: string;
+  value?: string;
+}) {
+  const tooltipId = useId();
+
+  return (
+    <span className="combine-equation-term-wrap">
+      <button
+        type="button"
+        className="combine-equation-term"
+        aria-describedby={tooltipId}
+        aria-label={label}
+      >
+        {children}
+      </button>
+      <span id={tooltipId} role="tooltip" className="combine-equation-tooltip">
+        <strong>{label}</strong>
+        {value ? <span className="combine-equation-tooltip__value">{value}</span> : null}
+        <span>{description}</span>
+      </span>
+    </span>
+  );
+}
+
+function CombinationEquationWorkbench({
+  phaseB,
+  weightA,
+  weightB,
+}: {
+  phaseB: Phase;
+  weightA: number;
+  weightB: number;
+}) {
+  const [mode, setMode] = useState<CombinationEquationMode>("mo");
+  const phiA = 0.6;
+  const phiB = 0.6;
+  const cA = weightA;
+  const cB = phaseB * weightB;
+  const contributionA = cA * phiA;
+  const contributionB = cB * phiB;
+  const psi = contributionA + contributionB;
+  const density = psi ** 2;
+  const aSquaredTerm = contributionA ** 2;
+  const bSquaredTerm = contributionB ** 2;
+  const crossTerm = 2 * cA * cB * phiA * phiB;
+  const modeCopy: Record<
+    CombinationEquationMode,
+    { title: string; summary: string; answerLabel: string; answer: string; answerText: string }
+  > = {
+    mo: {
+      title: "MO value at the highlighted point",
+      summary:
+        "This is the point-by-point addition rule. The app repeats this same addition at every point to draw the MO.",
+      answerLabel: "Signed result",
+      answer: `ψ = ${formatNumber(psi)}`,
+      answerText:
+        Math.abs(psi) < 0.005
+          ? "The two contributions cancel at this point, so this point is on a node."
+          : `${formatSignWord(psi)} ψ remains here, so this point keeps that phase in the resulting MO.`,
+    },
+    density: {
+      title: "Density after squaring the MO value",
+      summary:
+        "Square the combined ψ value after addition. Squaring makes density nonnegative.",
+      answerLabel: "Relative density",
+      answer: `|ψ|² = ${density.toFixed(2)}`,
+      answerText:
+        density < 0.005
+          ? "A zero wave amplitude gives zero density at the node."
+          : "A larger combined amplitude gives a larger relative density after squaring.",
+    },
+    cross: {
+      title: "Expanded density and the cross term",
+      summary:
+        "The cross term is where phase shows up after squaring. It adds for matched signs and subtracts for opposite signs.",
+      answerLabel: "Cross term",
+      answer: `2cAcBφAφB = ${formatNumber(crossTerm)}`,
+      answerText:
+        crossTerm > 0
+          ? "The cross term is positive, so overlap builds density between the atoms."
+          : crossTerm < 0
+            ? "The cross term is negative, so overlap cancels density at the node."
+            : "The cross term is zero, so there is no overlap contribution from these values.",
+    },
+  };
+  const current = modeCopy[mode];
+
+  return (
+    <section className="combine-equation-workbench" aria-label="Interactive compact equation">
+      <div className="combine-equation-header">
+        <div>
+          <span>Governing equation</span>
+          <h3>{current.title}</h3>
+        </div>
+        <p>{current.summary}</p>
+      </div>
+
+      <div className="combine-equation-tabs" role="group" aria-label="Equation view">
+        <button
+          type="button"
+          className={mode === "mo" ? "is-active" : ""}
+          onClick={() => setMode("mo")}
+        >
+          1 Add ψ
+        </button>
+        <button
+          type="button"
+          className={mode === "density" ? "is-active" : ""}
+          onClick={() => setMode("density")}
+        >
+          2 Square ψ
+        </button>
+        <button
+          type="button"
+          className={mode === "cross" ? "is-active" : ""}
+          onClick={() => setMode("cross")}
+        >
+          3 Cross term
+        </button>
+      </div>
+
+      <div className="combine-equation-body">
+        <div className="combine-equation-line" aria-label={current.title}>
+          {mode === "mo" ? (
+            <>
+              <CombinationEquationTerm
+                label="MO wavefunction"
+                value={`ψ = ${formatNumber(psi)}`}
+                description="The molecular orbital value at this point. It is a signed wave amplitude, not probability."
+              >
+                ψ
+              </CombinationEquationTerm>{" "}
+              ={" "}
+              <CombinationEquationTerm
+                label="weight on orbital A"
+                value={`cA = ${formatPlainNumber(cA)}`}
+                description="This multiplies the starting orbital on atom A before the values are added."
+              >
+                c<sub>A</sub>
+              </CombinationEquationTerm>
+              <CombinationEquationTerm
+                label="orbital A value"
+                value={`φA = ${formatNumber(phiA)}`}
+                description="The value of starting orbital A at the highlighted point."
+              >
+                φ<sub>A</sub>
+              </CombinationEquationTerm>{" "}
+              +{" "}
+              <CombinationEquationTerm
+                label="signed weight on orbital B"
+                value={`cB = ${formatNumber(cB)}`}
+                description="This is controlled by the flip button and the B-weight slider. A negative value means B has opposite phase at this point."
+              >
+                c<sub>B</sub>
+              </CombinationEquationTerm>
+              <CombinationEquationTerm
+                label="orbital B value"
+                value={`φB = ${formatNumber(phiB)}`}
+                description="The value of starting orbital B at the same highlighted point in space."
+              >
+                φ<sub>B</sub>
+              </CombinationEquationTerm>
+            </>
+          ) : mode === "density" ? (
+            <>
+              <CombinationEquationTerm
+                label="probability density"
+                value={`|ψ|² = ${density.toFixed(2)}`}
+                description="A relative density value at this point. It is never negative because ψ is squared."
+              >
+                |ψ|²
+              </CombinationEquationTerm>{" "}
+              ={" "}
+              <CombinationEquationTerm
+                label="combined wave amplitude"
+                value={`ψ = ${formatNumber(psi)}`}
+                description="Add the two signed orbital contributions first, then square the result."
+              >
+                (c<sub>A</sub>φ<sub>A</sub> + c<sub>B</sub>φ<sub>B</sub>)²
+              </CombinationEquationTerm>
+            </>
+          ) : (
+            <>
+              <CombinationEquationTerm
+                label="expanded density"
+                value={`|ψ|² = ${density.toFixed(2)}`}
+                description="The same density equation, written out so you can see the individual A, B, and overlap pieces."
+              >
+                |ψ|²
+              </CombinationEquationTerm>{" "}
+              ={" "}
+              <CombinationEquationTerm
+                label="A-only density piece"
+                value={`cA²φA² = ${aSquaredTerm.toFixed(2)}`}
+                description="The density contribution from orbital A by itself."
+              >
+                c<sub>A</sub>²φ<sub>A</sub>²
+              </CombinationEquationTerm>{" "}
+              +{" "}
+              <CombinationEquationTerm
+                label="B-only density piece"
+                value={`cB²φB² = ${bSquaredTerm.toFixed(2)}`}
+                description="The density contribution from orbital B by itself. The sign disappears because this part is squared."
+              >
+                c<sub>B</sub>²φ<sub>B</sub>²
+              </CombinationEquationTerm>{" "}
+              +{" "}
+              <CombinationEquationTerm
+                label="cross term"
+                value={`2cAcBφAφB = ${formatNumber(crossTerm)}`}
+                description="This term contains both orbitals at once. It is positive for matched signs and negative for opposite signs."
+              >
+                2c<sub>A</sub>c<sub>B</sub>φ<sub>A</sub>φ<sub>B</sub>
+              </CombinationEquationTerm>
+            </>
+          )}
+        </div>
+
+        <div className="combine-equation-answer">
+          <span>{current.answerLabel}</span>
+          <strong>{current.answer}</strong>
+          <p>{current.answerText}</p>
+        </div>
+
+        <div className="combine-equation-substitution" aria-label="Live substitution values">
+          <span>cA = {formatPlainNumber(cA)}</span>
+          <span>φA = {formatNumber(phiA)}</span>
+          <span>cB = {formatNumber(cB)}</span>
+          <span>φB = {formatNumber(phiB)}</span>
+          <span>cAφA = {formatNumber(contributionA)}</span>
+          <span>cBφB = {formatNumber(contributionB)}</span>
+          <span>ψ = {formatNumber(psi)}</span>
+          <span>|ψ|² = {density.toFixed(2)}</span>
+          {mode === "cross" ? (
+            <>
+              <span>cA²φA² = {aSquaredTerm.toFixed(2)}</span>
+              <span>cB²φB² = {bSquaredTerm.toFixed(2)}</span>
+              <span>cross = {formatNumber(crossTerm)}</span>
+            </>
+          ) : null}
+        </div>
+      </div>
+
+      <p className="combine-equation-note">
+        These are scaled teaching values at the highlighted point. The full MO
+        picture repeats the same equation across space.
+      </p>
+    </section>
+  );
+}
+
 function FacingLobes({ phaseB }: { phaseB: Phase }) {
-  const rightClass = phaseB === 1 ? "positive" : "negative";
+  const samePhase = phaseB === 1;
+  const clipPrefix = useId().replace(/[^a-zA-Z0-9_-]/g, "");
+  const leftClipId = `${clipPrefix}-facing-left-of-node`;
+  const rightClipId = `${clipPrefix}-facing-right-of-node`;
 
   return (
     <svg
-      className="facing-lobes"
-      viewBox="0 0 620 190"
+      className="facing-lobes facing-lobes--py"
+      viewBox="0 0 760 250"
       role="img"
-      aria-label="Facing lobes on atoms A and B with matching or opposite signs at a highlighted point between the atoms"
+      aria-label="Two p y orbitals on atoms A and B. Atom B flips phase so the center-facing lobes either match or cancel at the point between atoms."
     >
       <rect
         x="12"
         y="12"
-        width="596"
-        height="166"
+        width="736"
+        height="226"
         rx="18"
         className="wave-frame"
       />
-      <text x="28" y="38" className="wave-panel-title">
-        Look only at the highlighted point between the atoms
+      <text x="34" y="42" className="wave-panel-title">
+        Put two pᵧ orbitals together and look at the shared point
       </text>
-      <ellipse
-        cx="220"
-        cy="104"
-        rx="96"
-        ry="42"
-        className="orbital-lobe orbital-lobe--positive"
+      <text x="726" y="42" textAnchor="end" className="combine-py-note">
+        {samePhase ? "center lobes: + and +" : "center lobes: + and −"}
+      </text>
+
+      {!samePhase ? (
+        <defs>
+          <clipPath id={leftClipId} clipPathUnits="userSpaceOnUse">
+            <rect x="36" y="50" width="334" height="156" />
+          </clipPath>
+          <clipPath id={rightClipId} clipPathUnits="userSpaceOnUse">
+            <rect x="390" y="50" width="334" height="156" />
+          </clipPath>
+        </defs>
+      ) : null}
+
+      <g clipPath={!samePhase ? `url(#${leftClipId})` : undefined}>
+        <PyOrbitalGlyph
+          centerX={280}
+          centerY={128}
+          facingSign={1}
+          orientation="right"
+          scale={0.62}
+        />
+      </g>
+      <g clipPath={!samePhase ? `url(#${rightClipId})` : undefined}>
+        <PyOrbitalGlyph
+          centerX={480}
+          centerY={128}
+          facingSign={phaseB}
+          orientation="left"
+          scale={0.62}
+        />
+      </g>
+
+      {samePhase ? (
+        <ellipse
+          cx="380"
+          cy="128"
+          rx="42"
+          ry="24"
+          className="combine-py-overlap combine-py-overlap--positive"
+        />
+      ) : (
+        <>
+          <rect x="370" y="72" width="20" height="112" className="combine-node-gap" />
+          <line x1="380" x2="380" y1="68" y2="188" className="combine-node-line" />
+        </>
+      )}
+
+      <circle
+        cx="380"
+        cy="128"
+        r="17"
+        className={`highlight-point combine-py-highlight${
+          samePhase ? " combine-py-highlight--positive" : " combine-py-highlight--node"
+        }`}
       />
-      <ellipse
-        cx="400"
-        cy="104"
-        rx="96"
-        ry="42"
-        className={`orbital-lobe orbital-lobe--${rightClass}`}
-      />
-      <circle cx="154" cy="104" r="7" className="orbital-nucleus" />
-      <circle cx="466" cy="104" r="7" className="orbital-nucleus" />
-      <text x="154" y="154" textAnchor="middle" className="atom-caption">
+      <line x1="380" x2="380" y1="58" y2="83" className="highlight-pointer" />
+      <text x="380" y="51" textAnchor="middle" className="highlight-label">
+        same location in space
+      </text>
+      <text x="280" y="210" textAnchor="middle" className="atom-caption">
         atom A
       </text>
-      <text x="466" y="154" textAnchor="middle" className="atom-caption">
+      <text x="480" y="210" textAnchor="middle" className="atom-caption">
         atom B
-      </text>
-      <text x="220" y="111" textAnchor="middle" className="orbital-sign">
-        +
-      </text>
-      <text x="400" y="111" textAnchor="middle" className="orbital-sign">
-        {phaseB === 1 ? "+" : "−"}
-      </text>
-      <circle cx="310" cy="104" r="12" className="highlight-point" />
-      <line x1="310" x2="310" y1="64" y2="84" className="highlight-pointer" />
-      <text x="310" y="57" textAnchor="middle" className="highlight-label">
-        same location in space
       </text>
     </svg>
   );
@@ -176,54 +538,31 @@ function svgPath(points: readonly { x: number; y: number }[]): string {
 
 function StartingOrbital({
   centerX,
+  orientation,
   phase,
   weight,
   atom,
 }: {
   centerX: number;
+  orientation: "right" | "left";
   phase: Phase;
   weight: number;
   atom: string;
 }) {
-  const scale = 0.78 + 0.34 * Math.sqrt(Math.abs(weight));
-  const rx = 26 * scale;
-  const ry = 42 * scale;
-  const topClass = phase === 1 ? "positive" : "negative";
-  const bottomClass = phase === 1 ? "negative" : "positive";
+  const scale = 0.36 + 0.14 * Math.sqrt(Math.abs(weight));
 
   return (
     <g>
-      <line
-        x1={centerX}
-        x2={centerX}
-        y1="88"
-        y2="238"
-        className="combine-axis"
+      <PyOrbitalGlyph
+        centerX={centerX}
+        centerY={154}
+        facingSign={phase}
+        orientation={orientation}
+        scale={scale}
       />
-      <ellipse
-        cx={centerX}
-        cy="132"
-        rx={rx}
-        ry={ry}
-        className={`combine-phase combine-phase--${topClass}`}
-      />
-      <ellipse
-        cx={centerX}
-        cy="194"
-        rx={rx}
-        ry={ry}
-        className={`combine-phase combine-phase--${bottomClass}`}
-      />
-      <circle cx={centerX} cy="163" r="5" className="combine-nucleus" />
-      <text x={centerX} y="139" textAnchor="middle" className="combine-sign">
-        {phase === 1 ? "+" : "−"}
-      </text>
-      <text x={centerX} y="201" textAnchor="middle" className="combine-sign">
-        {phase === 1 ? "−" : "+"}
-      </text>
       <text
         x={centerX}
-        y="258"
+        y="238"
         textAnchor="middle"
         className="combine-atom-label"
       >
@@ -231,7 +570,7 @@ function StartingOrbital({
       </text>
       <text
         x={centerX}
-        y="279"
+        y="259"
         textAnchor="middle"
         className="combine-weight-label"
       >
@@ -251,18 +590,19 @@ function ResultingMoDiagram({
   phaseB: Phase;
 }) {
   const samePhase = weightA * weightB * phaseB >= 0;
+  const clipPrefix = useId().replace(/[^a-zA-Z0-9_-]/g, "");
+  const leftClipId = `${clipPrefix}-result-left-of-node`;
+  const rightClipId = `${clipPrefix}-result-right-of-node`;
   const shares = coefficientShares(weightA, weightB);
   const leftX = 596;
   const rightX = 704;
   const middleX = (leftX + rightX) / 2;
-  const topY = 134;
-  const bottomY = 210;
+  const resultY = 162;
   const overlapBalance = 2 * Math.sqrt(shares.amplitudeA * shares.amplitudeB);
-  const leftRx = 42 + shares.amplitudeA * 34;
-  const rightRx = 42 + shares.amplitudeB * 34;
-  const lobeRy = 28;
-  const blendRx = 34 + 28 * overlapBalance;
-  const blendRy = 14 + 9 * overlapBalance;
+  const resultScaleA = 0.34 + Math.sqrt(shares.amplitudeA) * 0.18;
+  const resultScaleB = 0.34 + Math.sqrt(shares.amplitudeB) * 0.18;
+  const bridgeRx = 18 + 42 * overlapBalance;
+  const bridgeRy = 13 + 15 * overlapBalance;
   const densityLeft = 510;
   const densityRight = 790;
   const densityBaseY = 350;
@@ -319,6 +659,16 @@ function ResultingMoDiagram({
       >
         <title id="combine-values-title">{title}</title>
         <desc id="combine-values-description">{caption}</desc>
+        {!samePhase ? (
+          <defs>
+            <clipPath id={leftClipId} clipPathUnits="userSpaceOnUse">
+              <rect x="500" y="86" width={nodeX - 508} height="152" />
+            </clipPath>
+            <clipPath id={rightClipId} clipPathUnits="userSpaceOnUse">
+              <rect x={nodeX + 8} y="86" width={790 - nodeX} height="152" />
+            </clipPath>
+          </defs>
+        ) : null}
 
         <rect
           x="14"
@@ -372,178 +722,95 @@ function ResultingMoDiagram({
 
         <StartingOrbital
           centerX={115}
+          orientation="right"
           phase={weightA >= 0 ? 1 : -1}
           weight={weightA}
           atom="A"
         />
         <StartingOrbital
           centerX={331}
+          orientation="left"
           phase={phaseB}
           weight={weightB}
           atom="B"
         />
 
         <text x="466" y="80" className="combine-subtitle">
-          wave amplitude ψ
+          wave amplitude ψ with the same phase colors as Lesson 1
         </text>
-        <line
-          x1="512"
-          x2="788"
-          y1="172"
-          y2="172"
-          className="combine-baseline"
-        />
+        <line x1="512" x2="788" y1={resultY} y2={resultY} className="combine-baseline" />
 
         {samePhase ? (
+          <ellipse
+            cx={middleX}
+            cy={resultY}
+            rx={bridgeRx}
+            ry={bridgeRy}
+            className="combine-py-overlap combine-py-overlap--positive combine-result-overlap"
+          />
+        ) : null}
+
+        <g clipPath={!samePhase ? `url(#${leftClipId})` : undefined}>
+          <PyOrbitalGlyph
+            centerX={leftX}
+            centerY={resultY}
+            facingSign={1}
+            orientation="right"
+            scale={resultScaleA}
+          />
+        </g>
+        <g clipPath={!samePhase ? `url(#${rightClipId})` : undefined}>
+          <PyOrbitalGlyph
+            centerX={rightX}
+            centerY={resultY}
+            facingSign={phaseB}
+            orientation="left"
+            scale={resultScaleB}
+          />
+        </g>
+
+        {!samePhase ? (
           <>
-            <ellipse
-              cx={middleX}
-              cy={topY}
-              rx={blendRx}
-              ry={blendRy}
-              className="source-lobe source-lobe--blend combine-source-lobe combine-source-lobe--blend"
-            />
-            <ellipse
-              cx={middleX}
-              cy={bottomY}
-              rx={blendRx}
-              ry={blendRy}
-              className="source-lobe source-lobe--blend combine-source-lobe combine-source-lobe--blend"
-            />
-            <ellipse
-              cx={leftX}
-              cy={topY}
-              rx={leftRx}
-              ry={lobeRy}
-              className="source-lobe source-lobe--a combine-source-lobe"
-            />
-            <ellipse
-              cx={rightX}
-              cy={topY}
-              rx={rightRx}
-              ry={lobeRy}
-              className="source-lobe source-lobe--b combine-source-lobe"
-            />
-            <ellipse
-              cx={leftX}
-              cy={bottomY}
-              rx={leftRx}
-              ry={lobeRy}
-              className="source-lobe source-lobe--a combine-source-lobe"
-            />
-            <ellipse
-              cx={rightX}
-              cy={bottomY}
-              rx={rightRx}
-              ry={lobeRy}
-              className="source-lobe source-lobe--b combine-source-lobe"
-            />
-          </>
-        ) : (
-          <>
-            <ellipse
-              cx={leftX}
-              cy={topY}
-              rx={leftRx}
-              ry={lobeRy}
-              className="source-lobe source-lobe--a combine-source-lobe"
-            />
-            <ellipse
-              cx={rightX}
-              cy={topY}
-              rx={rightRx}
-              ry={lobeRy}
-              className="source-lobe source-lobe--b combine-source-lobe"
-            />
-            <ellipse
-              cx={leftX}
-              cy={bottomY}
-              rx={leftRx}
-              ry={lobeRy}
-              className="source-lobe source-lobe--a combine-source-lobe"
-            />
-            <ellipse
-              cx={rightX}
-              cy={bottomY}
-              rx={rightRx}
-              ry={lobeRy}
-              className="source-lobe source-lobe--b combine-source-lobe"
-            />
             <rect
-              x={nodeX - 7}
-              y="93"
-              width="14"
-              height="145"
+              x={nodeX - 8}
+              y="98"
+              width="16"
+              height="130"
               className="combine-node-gap"
             />
             <line
               x1={nodeX}
               x2={nodeX}
-              y1="91"
-              y2="242"
+              y1="94"
+              y2="232"
               className="combine-node-line"
             />
             <text
               x={nodeX}
-              y="259"
+              y="249"
               textAnchor="middle"
               className="combine-node-label"
             >
               node
             </text>
           </>
-        )}
+        ) : null}
 
         <text
           x={leftX}
-          y={topY + 7}
-          textAnchor="middle"
-          className="source-phase-label combine-result-sign"
-        >
-          +
-        </text>
-        <text
-          x={rightX}
-          y={topY + 7}
-          textAnchor="middle"
-          className="source-phase-label combine-result-sign"
-        >
-          {phaseB === 1 ? "+" : "−"}
-        </text>
-        <text
-          x={leftX}
-          y={bottomY + 7}
-          textAnchor="middle"
-          className="source-phase-label combine-result-sign"
-        >
-          −
-        </text>
-        <text
-          x={rightX}
-          y={bottomY + 7}
-          textAnchor="middle"
-          className="source-phase-label combine-result-sign"
-        >
-          {phaseB === 1 ? "−" : "+"}
-        </text>
-
-        <circle cx={leftX} cy="172" r="5" className="combine-nucleus" />
-        <circle cx={rightX} cy="172" r="5" className="combine-nucleus" />
-        <text
-          x={leftX}
-          y="181"
+          y="249"
           textAnchor="middle"
           className="combine-result-atom"
         >
-          A
+          atom A
         </text>
         <text
           x={rightX}
-          y="181"
+          y="249"
           textAnchor="middle"
           className="combine-result-atom"
         >
-          B
+          atom B
         </text>
 
         <text x="466" y="291" className="combine-subtitle">
@@ -600,11 +867,10 @@ function ResultingMoDiagram({
         <strong>{title}</strong>
         <span>{caption}</span>
         <small>
-          Cyan and yellow show how much of the result comes from A and B; their
-          overlap marks mixed character. The + and − labels show phase. Green
-          is a sampled teaching graph: the app adds two smooth φ values to get
-          ψ(x), squares the result, and rescales it for display. It is not an
-          experimental density.
+          Blue and orange are the same phase colors used for the pᵧ orbital in
+          Lesson 1. The app adds two smooth φ values to get ψ(x), squares the
+          result, and rescales it for display. It is not an experimental
+          density.
         </small>
       </figcaption>
     </figure>
@@ -730,7 +996,7 @@ export function CombinationLesson(props: LessonComponentProps) {
               </div>
 
               <div className="choice-panel">
-                <h3>Choose the signs of the facing lobes</h3>
+                <h3>Flip atom B to change the center-facing signs</h3>
                 <div
                   className="sign-choice"
                   role="group"
@@ -741,14 +1007,14 @@ export function CombinationLesson(props: LessonComponentProps) {
                     className={phaseB === 1 ? "is-active" : ""}
                     onClick={() => setPhaseB(1)}
                   >
-                    same signs: + and +
+                    match: blue + meets blue +
                   </button>
                   <button
                     type="button"
                     className={phaseB === -1 ? "is-active" : ""}
                     onClick={() => setPhaseB(-1)}
                   >
-                    opposite signs: + and −
+                    flip B: blue + meets orange −
                   </button>
                 </div>
               </div>
@@ -839,14 +1105,11 @@ export function CombinationLesson(props: LessonComponentProps) {
 
       <details className="going-deeper">
         <summary>Going deeper: the compact equation</summary>
-        <p>
-          Chemists write the point-by-point rule as ψ = cAφA + cBφB. For real
-          orbitals, squaring gives |ψ|² = cA²φA² + cB²φB² + 2cAcBφAφB. The cross
-          term is positive for matching signs and negative for opposite signs.
-          That is why phase controls buildup or cancellation, while the
-          weight magnitudes control how strongly the final MO is weighted
-          toward each atom.
-        </p>
+        <CombinationEquationWorkbench
+          phaseB={phaseB}
+          weightA={weightA}
+          weightB={weightB}
+        />
       </details>
     </LessonShell>
   );

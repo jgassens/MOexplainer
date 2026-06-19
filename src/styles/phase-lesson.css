@@ -5,7 +5,7 @@
 
 .psi-primer {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  grid-template-columns: minmax(230px, 1fr) auto minmax(230px, 1fr) auto minmax(230px, 1fr);
   gap: 14px;
   align-items: stretch;
   padding: 18px;
@@ -35,6 +35,12 @@
   border-color: #bfd0c6;
 }
 
+.psi-primer__item--region {
+  --primer-card-bg: #fffaf0;
+  --primer-card-fade: rgb(255 250 240 / 0);
+  border-color: #dfd0b4;
+}
+
 .psi-primer__symbol {
   display: grid;
   place-items: center;
@@ -53,6 +59,11 @@
 .psi-primer__item--density .psi-primer__symbol {
   background: #dcebe3;
   font-size: 1.45rem;
+}
+
+.psi-primer__item--region .psi-primer__symbol {
+  background: #f6e8c9;
+  font-size: 1.35rem;
 }
 
 .psi-primer h3,
@@ -127,7 +138,7 @@
 .psi-primer__arrow {
   align-self: center;
   color: #6c6257;
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-weight: 800;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -143,6 +154,17 @@
   border-left: 4px solid #d6aa48;
   border-radius: 8px;
   font-weight: 650;
+}
+
+.psi-primer__scale-note strong {
+  color: #4d3515;
+  font-weight: 850;
+}
+
+.psi-primer__scale-note sub,
+.psi-primer__scale-note sup {
+  font-size: 0.72em;
+  line-height: 0;
 }
 
 .psi-stage-tabs {
@@ -252,6 +274,8 @@
 }
 
 .psi-stage-equation {
+  display: grid;
+  gap: 5px;
   align-self: center;
   padding: 18px;
   color: #24322e;
@@ -262,6 +286,70 @@
   font-size: 1.08rem;
   font-weight: 700;
   text-align: center;
+}
+
+.psi-stage-equation sup,
+.orbital3d-orbital-equation sup {
+  font-size: 0.62em;
+  line-height: 0;
+}
+
+.psi-stage-equation .orbital3d-wave-label {
+  display: inline-block;
+}
+
+.psi-stage-copy--probability3d {
+  grid-template-columns: minmax(0, 1.42fr) minmax(320px, 0.58fr);
+  gap: 10px 14px;
+  padding: 16px;
+}
+
+.psi-stage-copy--probability3d h2 {
+  font-size: clamp(1.25rem, 1.75vw, 1.68rem);
+}
+
+.psi-stage-copy--probability3d div > p:last-child {
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.psi-stage-copy--probability3d .psi-stage-equation {
+  padding: 13px 15px;
+  font-size: 0.98rem;
+  line-height: 1.45;
+}
+
+.psi-stage-copy--probability3d .psi-stage-correction {
+  padding: 10px 12px;
+  line-height: 1.38;
+}
+
+.orbital3d-p-label {
+  white-space: nowrap;
+}
+
+.orbital3d-p-label sub {
+  font-size: 0.64em;
+  line-height: 0;
+  vertical-align: sub;
+}
+
+.orbital3d-wave-label {
+  white-space: nowrap;
+}
+
+.orbital3d-wave-label__sub {
+  display: inline-block;
+  margin-left: 0.02em;
+  font-size: 0.58em;
+  line-height: 0;
+  vertical-align: sub;
+}
+
+.orbital3d-wave-label__sub sub {
+  font-size: 0.72em;
+  line-height: 0;
+  vertical-align: sub;
 }
 
 .psi-stage-correction {
@@ -862,24 +950,24 @@
 
 .orbital3d-explorer {
   display: grid;
-  gap: 16px;
+  gap: 12px;
 }
 
 .orbital3d-orbital-picker {
   display: grid;
-  grid-template-columns: minmax(0, 1.15fr) auto minmax(260px, 0.85fr);
-  gap: 14px;
+  grid-template-columns: minmax(0, 1.12fr) auto minmax(250px, 0.88fr);
+  gap: 12px;
   align-items: center;
   min-width: 0;
-  padding: 16px;
+  padding: 14px;
   background: #fffdf9;
   border: 1px solid #ddd5ca;
   border-radius: 16px;
 }
 
-.orbital3d-orbital-picker span,
+.orbital3d-orbital-picker > div:first-child > span,
 .orbital3d-orbital-picker__buttons,
-.orbital3d-orbital-equation span {
+.orbital3d-orbital-equation > span {
   min-width: 0;
 }
 
@@ -894,9 +982,10 @@
 }
 
 .orbital3d-orbital-picker p {
-  margin-top: 7px;
+  margin-top: 5px;
   color: #5f574f;
-  line-height: 1.48;
+  font-size: 0.93rem;
+  line-height: 1.38;
 }
 
 .orbital3d-orbital-picker > div:first-child > span {
@@ -918,9 +1007,9 @@
 .orbital3d-orbital-picker__buttons button {
   display: grid;
   place-items: center;
-  min-width: 54px;
-  min-height: 46px;
-  padding: 8px 12px;
+  min-width: 50px;
+  min-height: 42px;
+  padding: 7px 11px;
   color: #332d28;
   background: #f7f4ee;
   border: 1px solid #cfc5b8;
@@ -939,8 +1028,8 @@
 
 .orbital3d-orbital-equation {
   display: grid;
-  gap: 5px;
-  padding: 12px 13px;
+  gap: 4px;
+  padding: 11px 12px;
   color: #24322e;
   background: #edf2ee;
   border: 1px solid #c8d6cd;
@@ -950,25 +1039,32 @@
 .orbital3d-orbital-equation strong {
   color: #25211d;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: 1.05rem;
+  font-size: 1rem;
   line-height: 1.35;
 }
 
-.orbital3d-orbital-equation sub,
-.orbital3d-orbital-equation sup {
-  font-size: 0.68em;
+.orbital3d-orbital-equation__stack {
+  display: grid;
+  gap: 4px;
+  font-size: 0.92rem !important;
 }
 
-.orbital3d-orbital-equation span {
+.orbital3d-orbital-equation__stack > span {
+  display: block;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.orbital3d-orbital-equation > span {
   color: #5f574f;
-  font-size: 0.86rem;
+  font-size: 0.82rem;
   line-height: 1.35;
 }
 
 .orbital3d-concept-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.05fr) minmax(260px, 0.78fr) minmax(0, 1fr);
-  gap: 12px;
+  gap: 10px;
 }
 
 .orbital3d-concept-grid article,
@@ -984,7 +1080,7 @@
 }
 
 .orbital3d-concept-grid article {
-  padding: 15px 16px;
+  padding: 12px 14px;
 }
 
 .orbital3d-concept-grid h3,
@@ -996,9 +1092,10 @@
 }
 
 .orbital3d-concept-grid p {
-  margin: 8px 0 0;
+  margin: 6px 0 0;
   color: #5f574f;
-  line-height: 1.52;
+  font-size: 0.9rem;
+  line-height: 1.42;
 }
 
 .orbital3d-clarification {
@@ -1023,8 +1120,8 @@
 
 .orbital3d-layout {
   display: grid;
-  grid-template-columns: minmax(380px, 1.05fr) minmax(360px, 0.95fr);
-  gap: 16px;
+  grid-template-columns: minmax(420px, 1.08fr) minmax(360px, 0.92fr);
+  gap: 12px;
   align-items: start;
 }
 
@@ -1032,18 +1129,18 @@
 .orbital3d-work-stack {
   display: grid;
   min-width: 0;
-  gap: 12px;
+  gap: 10px;
 }
 
 .orbital3d-scene-card {
   display: grid;
-  gap: 10px;
-  padding: 12px;
+  gap: 8px;
+  padding: 10px;
 }
 
 .orbital3d-canvas-wrap {
   position: relative;
-  min-height: 430px;
+  min-height: clamp(320px, 38vw, 390px);
   overflow: hidden;
   background: #f7f4ee;
   border: 1px solid #d9d0c2;
@@ -1074,8 +1171,8 @@
 .orbital3d-mode-toggle button,
 .orbital3d-phase-toggle button,
 .orbital3d-presets button {
-  min-height: 38px;
-  padding: 8px 12px;
+  min-height: 34px;
+  padding: 7px 11px;
   color: #332d28;
   background: #fffdf9;
   border: 1px solid #cfc5b8;
@@ -1108,7 +1205,7 @@
 }
 
 .orbital3d-surface-note {
-  padding: 11px 13px;
+  padding: 9px 11px;
   background: #f7f4ee;
   border: 1px solid #d9d0c2;
   border-radius: 12px;
@@ -1144,8 +1241,8 @@
 .orbital3d-controls,
 .orbital3d-live {
   display: grid;
-  gap: 14px;
-  padding: 15px;
+  gap: 10px;
+  padding: 12px;
 }
 
 .orbital3d-controls__header span,
@@ -1169,13 +1266,13 @@
 .orbital3d-control-grid,
 .orbital3d-alpha-phase {
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
 
 .orbital3d-control-range {
   display: grid;
-  gap: 7px;
-  padding: 11px;
+  gap: 5px;
+  padding: 9px;
   background: #f7f4ee;
   border: 1px solid #d9d0c2;
   border-radius: 12px;
@@ -1200,8 +1297,8 @@
 .orbital3d-presets p {
   margin: 0;
   color: #675f57;
-  font-size: 0.86rem;
-  line-height: 1.38;
+  font-size: 0.8rem;
+  line-height: 1.3;
 }
 
 .orbital3d-control-range__inputs {
@@ -1247,9 +1344,9 @@
 
 .orbital3d-phase-toggle {
   display: grid;
-  gap: 8px;
+  gap: 6px;
   margin: 0;
-  padding: 11px;
+  padding: 9px;
   background: #f7f4ee;
   border: 1px solid #d9d0c2;
   border-radius: 12px;
@@ -1270,8 +1367,8 @@
 
 .orbital3d-presets {
   display: grid;
-  gap: 9px;
-  padding: 11px;
+  gap: 7px;
+  padding: 9px;
   background: #fff5dc;
   border: 1px solid #ead3a2;
   border-radius: 12px;
@@ -1280,13 +1377,13 @@
 .orbital3d-integral {
   display: grid;
   gap: 4px;
-  padding: 12px;
+  padding: 10px;
   color: #25211d;
   background: #edf5f1;
   border: 1px solid #b9d2c7;
   border-radius: 12px;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: 1.02rem;
+  font-size: 0.95rem;
   font-weight: 740;
   line-height: 1.5;
 }
@@ -1311,12 +1408,12 @@
 .orbital3d-live__grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 9px;
+  gap: 8px;
 }
 
 .orbital3d-live__grid article {
   min-width: 0;
-  padding: 11px;
+  padding: 9px;
   background: #f7f4ee;
   border: 1px solid #d9d0c2;
   border-radius: 11px;
@@ -1328,7 +1425,7 @@
   overflow-wrap: anywhere;
   color: #27231f;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: 1.04rem;
+  font-size: 0.96rem;
   font-style: normal;
   font-variant-numeric: tabular-nums;
 }
@@ -1444,7 +1541,21 @@
   line-height: 1.6;
 }
 
-@media (max-width: 980px) {
+@media (max-width: 1180px) {
+  .psi-primer {
+    grid-template-columns: 1fr;
+  }
+
+  .psi-primer__arrow {
+    justify-self: center;
+  }
+
+  .psi-primer__scale-note {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 1100px) {
   .orbital3d-concept-grid,
   .orbital3d-layout,
   .orbital3d-orbital-picker,
@@ -1455,11 +1566,11 @@
   .orbital3d-canvas-wrap {
     min-height: 380px;
   }
+}
 
-  .psi-visual-grid {
-    grid-template-columns: 1fr;
-  }
-
+@media (max-width: 980px) {
+  .psi-stage-copy--probability3d,
+  .psi-visual-grid,
   .psi-equation-workbench__header,
   .psi-equation-workbench__body {
     grid-template-columns: 1fr;
@@ -1480,20 +1591,8 @@
 }
 
 @media (max-width: 760px) {
-  .psi-primer {
-    grid-template-columns: 1fr;
-  }
-
   .psi-primer--expanded {
-    grid-template-rows: 1fr auto 1fr auto;
-  }
-
-  .psi-primer__arrow {
-    justify-self: center;
-  }
-
-  .psi-primer__scale-note {
-    grid-column: auto;
+    grid-template-rows: none;
   }
 
   .psi-stage-tabs {

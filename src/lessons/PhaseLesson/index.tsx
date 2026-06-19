@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { LessonShell } from "../../components/LessonShell/LessonShell";
+import { OrbitalWavefunctionLabel } from "../../components/orbital3d/OrbitalNotation";
 import {
   formatSigned,
   relativeDensity,
@@ -31,7 +32,7 @@ interface StageCopy {
   shortTitle: string;
   title: string;
   lead: string;
-  equation: string;
+  equation: ReactNode;
   correction: string;
 }
 
@@ -77,8 +78,18 @@ const stages: readonly StageCopy[] = [
     shortTitle: "Probability in 3D",
     title: "From one point to a region of space",
     lead: "The wavefunction assigns one signed amplitude to every point in three-dimensional space. Squaring that value gives probability density at the point. An actual probability belongs to a region, not to one exact mathematical point. The sampling box selects a finite volume, and the integral adds |ψ|² throughout that volume.",
-    equation:
-      "ψ_{p_i}(x,y,z) = N i e^−α(x²+y²+z²), where i = x, y, or z     volume R → P(R) = ∭R |ψ|² dτ",
+    equation: (
+      <>
+        <span>
+          <OrbitalWavefunctionLabel axis="i" />(x, y, z) = N i{" "}
+          e<sup>−α(x<sup>2</sup> + y<sup>2</sup> + z<sup>2</sup>)</sup>
+        </span>
+        <span>where i = x, y, or z</span>
+        <span>
+          volume R → P(R) = ∭<sub>R</sub> |ψ|<sup>2</sup> dτ
+        </span>
+      </>
+    ),
     correction:
       "ψ at the center is not the probability inside the box. |ψ|² at the center is a local density value. Probability requires adding density throughout the complete selected volume.",
   },
@@ -261,7 +272,7 @@ function EquationWorkbench({
               </EquationTerm>{" "}
               <EquationTerm
                 label="Gaussian fade-out"
-                value={`e^((1 − y²)/2) = ${exponentialValue.toFixed(2)}`}
+                value={`exp((1 − y²)/2) = ${exponentialValue.toFixed(2)}`}
                 description="This makes the orbital fade as you move away from the nucleus. The scale is chosen so |ψ| reaches 1 near y = ±1."
               >
                 e<sup>(1 − y²)/2</sup>
@@ -358,6 +369,7 @@ function PrimerCard({
   density = false,
   expanded,
   onToggle,
+  region = false,
   symbol,
   title,
 }: {
@@ -365,13 +377,19 @@ function PrimerCard({
   density?: boolean;
   expanded: boolean;
   onToggle: () => void;
+  region?: boolean;
   symbol: ReactNode;
   title: string;
 }) {
   const bodyId = useId();
+  const toneClass = density
+    ? " psi-primer__item--density"
+    : region
+      ? " psi-primer__item--region"
+      : "";
 
   return (
-    <div className={`psi-primer__item${density ? " psi-primer__item--density" : ""}`}>
+    <div className={`psi-primer__item${toneClass}`}>
       <span className="psi-primer__symbol">{symbol}</span>
       <div className="psi-primer__content">
         <h3>{title}</h3>
@@ -395,6 +413,50 @@ function PrimerCard({
   );
 }
 
+type PrimerBridgeSegment =
+  | {
+      type: "card";
+      body: string;
+      symbol: ReactNode;
+      title: string;
+      tone?: "density" | "region";
+    }
+  | {
+      type: "arrow";
+      label: string;
+    };
+
+const primerBridgeSegments: PrimerBridgeSegment[] = [
+  {
+    type: "card",
+    symbol: "ψ",
+    title: "Wavefunction",
+    body: "ψ, pronounced “sigh,” is the wavefunction. For an orbital, ψ is the mathematical function behind the picture. At each point in space, it gives one signed value. The sign tells phase, and the size tells amplitude. Start here because orbitals combine by adding ψ values point by point, which later explains nodes, bonding, and antibonding.",
+  },
+  {
+    type: "arrow",
+    label: "SQUARE IT →",
+  },
+  {
+    type: "card",
+    symbol: "|ψ|²",
+    title: "Probability density",
+    tone: "density",
+    body: "|ψ|² is probability density, not probability itself. Squaring ψ removes the sign, so the result is never negative. This tells how strongly each tiny bit of space contributes to where the electron may be found. A large |ψ|² means high local density. To get an actual probability, you still have to add that density over a finite region.",
+  },
+  {
+    type: "arrow",
+    label: "INTEGRATE IT →",
+  },
+  {
+    type: "card",
+    symbol: "P(R)",
+    title: "Probability in a region",
+    tone: "region",
+    body: "Actual probability comes from integrating probability density over a chosen volume of space. This tells the chance of finding the electron somewhere inside that region R. A point does not have a standalone probability in this teaching model. Instead, density lives at points, while probability belongs to areas or volumes obtained by adding up |ψ|² throughout the region.",
+  },
+];
+
 function PsiPrimer() {
   const [expanded, setExpanded] = useState(false);
   const toggleExpanded = () => setExpanded((current) => !current);
@@ -402,42 +464,31 @@ function PsiPrimer() {
   return (
     <section
       className={`psi-primer${expanded ? " psi-primer--expanded" : ""}`}
-      aria-label="Psi and probability density"
+      aria-label="Psi, probability density, and probability in a region"
     >
-      <PrimerCard
-        expanded={expanded}
-        onToggle={toggleExpanded}
-        symbol="ψ"
-        title="Wavefunction"
-      >
-        ψ, pronounced “sigh,” is the wavefunction. For an orbital, ψ is the
-        mathematical function behind the picture. Start here because everything
-        else depends on it: the sign of ψ gives phase, the size of ψ gives
-        amplitude, and |ψ|² gives electron density. When orbitals combine, their
-        ψ values are added point by point. That is why ψ has to come first
-        before nodes, bonding, antibonding, or MO energy diagrams make sense.
-      </PrimerCard>
-      <span className="psi-primer__arrow" aria-hidden="true">
-        square it →
-      </span>
-      <PrimerCard
-        density
-        expanded={expanded}
-        onToggle={toggleExpanded}
-        symbol="|ψ|²"
-        title="Probability density"
-      >
-        |ψ|² is probability density. It comes from squaring the wavefunction, so
-        the sign of ψ disappears and the result is never negative. Start with ψ
-        to understand phase; square ψ to understand density. A high |ψ|² value
-        marks a region where the electron is more likely to be found, but
-        probability itself comes from adding density over a volume of space.
-      </PrimerCard>
+      {primerBridgeSegments.map((segment, index) =>
+        segment.type === "arrow" ? (
+          <span key={`${segment.label}-${index}`} className="psi-primer__arrow">
+            {segment.label}
+          </span>
+        ) : (
+          <PrimerCard
+            key={segment.title}
+            density={segment.tone === "density"}
+            expanded={expanded}
+            onToggle={toggleExpanded}
+            region={segment.tone === "region"}
+            symbol={segment.symbol}
+            title={segment.title}
+          >
+            {segment.body}
+          </PrimerCard>
+        ),
+      )}
       <p className="psi-primer__scale-note">
-        On this page, we are looking at one p orbital on one atom. We are not
-        yet at a real molecular orbital, but molecular orbitals start here, so
-        we will begin here. ψ is rescaled so the largest lobe has |ψ| = 1.
-        That “1” is a relative amplitude, not a 100% probability.
+        <strong>Important:</strong> |ψ|² is density at a point. ∫<sub>R</sub>{" "}
+        |ψ|² dτ is probability in a region. These are related, but they are not
+        the same thing.
       </p>
     </section>
   );
@@ -871,7 +922,7 @@ export function PhaseLesson(props: LessonComponentProps) {
           ))}
         </nav>
 
-        <section className="psi-stage-copy">
+        <section className={`psi-stage-copy ${stage.id === "probability3d" ? "psi-stage-copy--probability3d" : ""}`}>
           <div>
             <p className="psi-stage-copy__eyebrow">Step {stageIndex + 1} of {stages.length}</p>
             <h2>{stage.title}</h2>

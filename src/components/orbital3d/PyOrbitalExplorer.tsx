@@ -7,12 +7,14 @@ import type {
 } from "../../models/pyOrbital3d";
 import { Orbital3DFallback } from "./Orbital3DFallback";
 import { Orbital3DLiveValues, type IntegralHighlight } from "./Orbital3DLiveValues";
+import { OrbitalWavefunctionLabel, POrbitalLabel } from "./OrbitalNotation";
 import { PyOrbitalScene } from "./PyOrbitalScene";
 import {
   SamplingBoxControls,
   type SamplingBoxMode,
   type SamplingPreset,
 } from "./SamplingBoxControls";
+import type { Orbital3DViewMode } from "./orbital3dViewMode";
 
 interface PyOrbitalExplorerProps {
   alpha: number;
@@ -26,30 +28,12 @@ const initialBox: AxisAlignedBox3D = {
   size: { x: 1, y: 1, z: 1 },
 };
 
-const orbitalChoices: Array<{
-  axis: POrbitalAxis;
-  label: string;
-  spokenLabel: string;
-}> = [
-  { axis: "x", label: "pₓ", spokenLabel: "p x" },
-  { axis: "y", label: "pᵧ", spokenLabel: "p y" },
-  { axis: "z", label: "p_z", spokenLabel: "p z" },
-];
-
 function centerOnAxis(axis: POrbitalAxis, value: number): Point3D {
   return {
     x: axis === "x" ? value : 0,
     y: axis === "y" ? value : 0,
     z: axis === "z" ? value : 0,
   };
-}
-
-function selectedOrbitalLabel(axis: POrbitalAxis) {
-  return orbitalChoices.find((choice) => choice.axis === axis)?.label ?? "pᵧ";
-}
-
-function selectedOrbitalSpokenLabel(axis: POrbitalAxis) {
-  return orbitalChoices.find((choice) => choice.axis === axis)?.spokenLabel ?? "p y";
 }
 
 function positiveLobeBox(axis: POrbitalAxis): AxisAlignedBox3D {
@@ -60,13 +44,13 @@ function positiveLobeBox(axis: POrbitalAxis): AxisAlignedBox3D {
 }
 
 function presetsForAxis(axis: POrbitalAxis): SamplingPreset[] {
-  const label = selectedOrbitalLabel(axis);
   return [
     {
       id: "positive-lobe",
       label: "Positive lobe",
       box: positiveLobeBox(axis),
-      explanation: `For the selected ${label} orbital, ψ is positive at the center. Density and box probability are positive, but neither retains a phase sign.`,
+      explanation:
+        "For the selected orbital, ψ is positive at the center. Density and box probability are positive, but neither retains a phase sign.",
     },
     {
       id: "mirror-negative",
@@ -113,6 +97,48 @@ function presetsForAxis(axis: POrbitalAxis): SamplingPreset[] {
   ];
 }
 
+function presetsForViewMode(viewMode: Orbital3DViewMode): SamplingPreset[] {
+  if (viewMode === "py") return presetsForAxis("y");
+
+  return [
+    {
+      id: "shell-y-lobe",
+      label: "+y lobe",
+      box: positiveLobeBox("y"),
+      explanation:
+        "This samples the same positive p-y lobe as the focused view while the shell overview keeps p-x and p-z visible.",
+    },
+    {
+      id: "shell-x-lobe",
+      label: "+x lobe",
+      box: positiveLobeBox("x"),
+      explanation:
+        "The equations treat p-x the same way as p-y, with x doing the sign-and-size work instead of y.",
+    },
+    {
+      id: "shell-z-lobe",
+      label: "+z lobe",
+      box: positiveLobeBox("z"),
+      explanation:
+        "The p-z orbital follows the same rule, but its two lobes point along the z axis.",
+    },
+    {
+      id: "shell-center",
+      label: "Nucleus",
+      box: { center: { x: 0, y: 0, z: 0 }, size: { x: 0.9, y: 0.9, z: 0.9 } },
+      explanation:
+        "Every individual p orbital has zero amplitude at the nucleus. A finite box around the nucleus still catches nearby density.",
+    },
+    {
+      id: "shell-most-density",
+      label: "Fuller region",
+      box: { center: { x: 0, y: 0, z: 0 }, size: { x: 4.4, y: 4.4, z: 4.4 } },
+      explanation:
+        "A larger region encloses more of the average p-shell density, so the integrated probability moves toward 1.",
+    },
+  ];
+}
+
 function detectWebGL() {
   if (typeof window === "undefined" || typeof document === "undefined") return false;
   if (!("WebGLRenderingContext" in window)) return false;
@@ -131,14 +157,14 @@ export function PyOrbitalExplorer({
   onAlphaChange,
   onGlobalPhaseChange,
 }: PyOrbitalExplorerProps) {
-  const [orbitalAxis, setOrbitalAxis] = useState<POrbitalAxis>("y");
+  const orbitalAxis: POrbitalAxis = "y";
+  const [viewMode, setViewMode] = useState<Orbital3DViewMode>("py");
   const [box, setBox] = useState<AxisAlignedBox3D>(initialBox);
   const [mode, setMode] = useState<SamplingBoxMode>("move");
   const [canUseWebGL, setCanUseWebGL] = useState(false);
   const [highlight, setHighlight] = useState<IntegralHighlight>(null);
-  const presets = useMemo(() => presetsForAxis(orbitalAxis), [orbitalAxis]);
+  const presets = useMemo(() => presetsForViewMode(viewMode), [viewMode]);
   const [presetExplanation, setPresetExplanation] = useState(presets[0].explanation);
-  const selectedLabel = selectedOrbitalLabel(orbitalAxis);
 
   useEffect(() => {
     setCanUseWebGL(detectWebGL());
@@ -168,50 +194,144 @@ export function PyOrbitalExplorer({
   const choosePreset = (preset: SamplingPreset) => {
     setBox(preset.box);
     setPresetExplanation(preset.explanation);
-    setHighlight(orbitalAxis);
+    setHighlight(viewMode === "py" ? orbitalAxis : null);
   };
 
-  const chooseOrbitalAxis = (axis: POrbitalAxis) => {
-    const nextPresets = presetsForAxis(axis);
-    setOrbitalAxis(axis);
+  const chooseViewMode = (nextViewMode: Orbital3DViewMode) => {
+    const nextPresets = presetsForViewMode(nextViewMode);
+    setViewMode(nextViewMode);
     setBox(nextPresets[0].box);
     setPresetExplanation(nextPresets[0].explanation);
-    setHighlight(axis);
+    setHighlight(nextViewMode === "py" ? orbitalAxis : null);
   };
 
   return (
     <section className="orbital3d-explorer" aria-label="Probability in a selected three-dimensional p orbital volume">
-      <section className="orbital3d-orbital-picker" aria-label="Choose one p orbital">
+      <section className="orbital3d-orbital-picker" aria-label="Choose focused p-y view or p-shell overview">
         <div>
-          <span>Selected orbital</span>
-          <h3>Show one p orbital at a time</h3>
+          <span>Orbital view</span>
+          <h3>Start with <POrbitalLabel axis="y" />, then compare the p shell</h3>
           <p>
-            The default is pᵧ because the earlier y-axis slider prepares that
-            story. pₓ, pᵧ, and p_z are three separate mutually perpendicular p
-            orbitals on the same atom, not one combined orbital.
+            The focused view keeps the earlier y-axis story: one signed{" "}
+            <POrbitalLabel axis="y" /> orbital. <POrbitalLabel axis="x" /> and{" "}
+            <POrbitalLabel axis="z" /> use the same equation with x or z
+            replacing y. The shell view shows all three separate p orbitals on
+            the same atom.
           </p>
         </div>
-        <div className="orbital3d-orbital-picker__buttons" role="group" aria-label="p orbital selector">
-          {orbitalChoices.map((choice) => (
-            <button
-              key={choice.axis}
-              type="button"
-              className={choice.axis === orbitalAxis ? "is-active" : ""}
-              aria-pressed={choice.axis === orbitalAxis}
-              aria-label={`Show ${choice.spokenLabel} orbital`}
-              onClick={() => chooseOrbitalAxis(choice.axis)}
-            >
-              {choice.label}
-            </button>
-          ))}
+        <div className="orbital3d-orbital-picker__buttons" role="group" aria-label="Orbital view selector">
+          <button
+            type="button"
+            className={viewMode === "py" ? "is-active" : ""}
+            aria-pressed={viewMode === "py"}
+            aria-label="Show p y orbital only"
+            onClick={() => chooseViewMode("py")}
+          >
+            <POrbitalLabel axis="y" /> only
+          </button>
+          <button
+            type="button"
+            className={viewMode === "shell" ? "is-active" : ""}
+            aria-pressed={viewMode === "shell"}
+            aria-label="Show p x p y and p z shell overview"
+            onClick={() => chooseViewMode("shell")}
+          >
+            p shell
+          </button>
         </div>
-        <div className="orbital3d-orbital-equation" aria-label={`Equation for the selected ${selectedOrbitalSpokenLabel(orbitalAxis)} orbital`}>
-          <strong>
-            ψ<sub>{selectedLabel}</sub>(x,y,z) = N {orbitalAxis} e<sup>−α(x²+y²+z²)</sup>
-          </strong>
-          <span>Here i = x, y, or z. This view is currently using i = {orbitalAxis}.</span>
+        <div
+          className="orbital3d-orbital-equation"
+          aria-label={viewMode === "shell" ? "Equations for the p-shell density overview" : "Equation for the p-y orbital"}
+        >
+          {viewMode === "shell" ? (
+            <>
+              <strong className="orbital3d-orbital-equation__stack">
+                <span>
+                  <OrbitalWavefunctionLabel axis="i" />(x, y, z) = N i{" "}
+                  e<sup>−α(x<sup>2</sup> + y<sup>2</sup> + z<sup>2</sup>)</sup>
+                </span>
+                <span>
+                  ρ<sub>p,avg</sub> = (|<OrbitalWavefunctionLabel axis="x" />|² + |<OrbitalWavefunctionLabel axis="y" />|² + |<OrbitalWavefunctionLabel axis="z" />|²) / 3
+                </span>
+              </strong>
+              <span>
+                Here i is x, y, or z. The shell readout averages the three
+                separate p-orbital densities so P(box) stays on a 0 to 1 scale.
+              </span>
+            </>
+          ) : (
+            <>
+              <strong>
+                <OrbitalWavefunctionLabel axis="y" />(x, y, z) = N y{" "}
+                e<sup>−α(x<sup>2</sup> + y<sup>2</sup> + z<sup>2</sup>)</sup>
+              </strong>
+              <span>
+                This is the same p-orbital rule used for <POrbitalLabel axis="x" />{" "}
+                and <POrbitalLabel axis="z" />, with the axis coordinate
+                changed.
+              </span>
+            </>
+          )}
         </div>
       </section>
+
+      <div className="orbital3d-layout">
+        <div className="orbital3d-view-stack">
+          {canUseWebGL ? (
+            <PyOrbitalScene
+              alpha={alpha}
+              box={box}
+              globalPhase={globalPhase}
+              mode={mode}
+              orbitalAxis={orbitalAxis}
+              viewMode={viewMode}
+              onBoxChange={(nextBox) => updateBox(nextBox, null)}
+            />
+          ) : (
+            <Orbital3DFallback
+              box={box}
+              globalPhase={globalPhase}
+              orbitalAxis={orbitalAxis}
+              viewMode={viewMode}
+            />
+          )}
+          <p className="orbital3d-surface-note">
+            {viewMode === "shell" ? (
+              <>
+                The shell overview overlays <POrbitalLabel axis="x" />,{" "}
+                <POrbitalLabel axis="y" />, and <POrbitalLabel axis="z" />.
+                They are three separate orbitals, not one combined orbital.
+              </>
+            ) : (
+              "The surface marks one selected wave-amplitude level. The orbital extends beyond the surface."
+            )}
+          </p>
+          <Orbital3DLiveValues
+            alpha={alpha}
+            box={box}
+            globalPhase={globalPhase}
+            highlight={highlight}
+            orbitalAxis={orbitalAxis}
+            viewMode={viewMode}
+          />
+        </div>
+
+        <div className="orbital3d-work-stack">
+          <SamplingBoxControls
+            alpha={alpha}
+            box={box}
+            globalPhase={globalPhase}
+            mode={mode}
+            onAlphaChange={updateAlpha}
+            onBoxChange={updateBox}
+            onGlobalPhaseChange={updateGlobalPhase}
+            onModeChange={setMode}
+            onPresetChoose={choosePreset}
+            presetExplanation={presetExplanation}
+            presets={presets}
+          />
+        </div>
+      </div>
 
       <div className="orbital3d-concept-grid">
         <article>
@@ -236,50 +356,6 @@ export function PyOrbitalExplorer({
             throughout the complete selected volume.
           </p>
         </article>
-      </div>
-
-      <div className="orbital3d-layout">
-        <div className="orbital3d-view-stack">
-          {canUseWebGL ? (
-            <PyOrbitalScene
-              alpha={alpha}
-              box={box}
-              globalPhase={globalPhase}
-              mode={mode}
-              orbitalAxis={orbitalAxis}
-              onBoxChange={(nextBox) => updateBox(nextBox, null)}
-            />
-          ) : (
-            <Orbital3DFallback box={box} globalPhase={globalPhase} orbitalAxis={orbitalAxis} />
-          )}
-          <p className="orbital3d-surface-note">
-            The surface marks one selected wave-amplitude level. The orbital
-            extends beyond the surface.
-          </p>
-        </div>
-
-        <div className="orbital3d-work-stack">
-          <SamplingBoxControls
-            alpha={alpha}
-            box={box}
-            globalPhase={globalPhase}
-            mode={mode}
-            onAlphaChange={updateAlpha}
-            onBoxChange={updateBox}
-            onGlobalPhaseChange={updateGlobalPhase}
-            onModeChange={setMode}
-            onPresetChoose={choosePreset}
-            presetExplanation={presetExplanation}
-            presets={presets}
-          />
-          <Orbital3DLiveValues
-            alpha={alpha}
-            box={box}
-            globalPhase={globalPhase}
-            highlight={highlight}
-            orbitalAxis={orbitalAxis}
-          />
-        </div>
       </div>
 
       <details className="orbital3d-going-deeper">

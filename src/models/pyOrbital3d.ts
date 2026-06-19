@@ -14,6 +14,8 @@ export interface AxisAlignedBox3D {
 export type GlobalPhaseSign = 1 | -1;
 export type POrbitalAxis = "x" | "y" | "z";
 
+export const P_ORBITAL_AXES: readonly POrbitalAxis[] = ["x", "y", "z"];
+
 const PROBABILITY_TOLERANCE = 1e-12;
 
 function assertFinite(value: number, label: string) {
@@ -119,6 +121,15 @@ export function pyDensity(point: Point3D, alpha: number): number {
   return pOrbitalDensity(point, alpha, "y");
 }
 
+export function pShellAverageDensity(point: Point3D, alpha: number): number {
+  return (
+    P_ORBITAL_AXES.reduce(
+      (total, axis) => total + pOrbitalDensity(point, alpha, axis),
+      0,
+    ) / P_ORBITAL_AXES.length
+  );
+}
+
 export function gaussianIntegral0(lower: number, upper: number, beta: number): number {
   validateBounds(lower, upper, beta);
   const scale = Math.sqrt(beta);
@@ -191,6 +202,19 @@ export function probabilityInPOrbitalBox(
     xIntegral *
     yIntegral *
     zIntegral;
+
+  return normalizeProbability(probability);
+}
+
+export function probabilityInAveragePShellBox(
+  box: AxisAlignedBox3D,
+  alpha: number,
+): number {
+  const probability =
+    P_ORBITAL_AXES.reduce(
+      (total, axis) => total + probabilityInPOrbitalBox(box, alpha, axis),
+      0,
+    ) / P_ORBITAL_AXES.length;
 
   return normalizeProbability(probability);
 }

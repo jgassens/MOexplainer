@@ -3,9 +3,11 @@ import {
   boxVolume,
   gaussianIntegral0,
   gaussianIntegral2,
+  probabilityInAveragePShellBox,
   probabilityInPyBox,
   probabilityInPOrbitalBox,
   pOrbitalDensity,
+  pShellAverageDensity,
   pOrbitalWavefunction,
   pyDensity,
   pyMaximumAbsoluteAmplitude,
@@ -207,6 +209,30 @@ describe("normalized 3D p-y orbital model", () => {
       12,
     );
     expect(pOrbitalDensity({ x: 0, y: 1, z: 0 }, alpha, "x")).toBe(0);
+  });
+
+  it("treats the p-shell overview as an average of the three separate p densities", () => {
+    const alpha = 0.8;
+    const point = { x: 0.4, y: -0.7, z: 0.2 };
+    const box: AxisAlignedBox3D = {
+      center: point,
+      size: { x: 0.9, y: 1.1, z: 0.7 },
+    };
+    const averageDensity =
+      (pOrbitalDensity(point, alpha, "x") +
+        pOrbitalDensity(point, alpha, "y") +
+        pOrbitalDensity(point, alpha, "z")) /
+      3;
+    const averageProbability =
+      (probabilityInPOrbitalBox(box, alpha, "x") +
+        probabilityInPOrbitalBox(box, alpha, "y") +
+        probabilityInPOrbitalBox(box, alpha, "z")) /
+      3;
+
+    expect(pShellAverageDensity(point, alpha)).toBeCloseTo(averageDensity, 12);
+    expect(probabilityInAveragePShellBox(box, alpha)).toBeCloseTo(averageProbability, 12);
+    expect(probabilityInAveragePShellBox(box, alpha)).toBeGreaterThanOrEqual(0);
+    expect(probabilityInAveragePShellBox(box, alpha)).toBeLessThanOrEqual(1);
   });
 
   it("rejects invalid ordinary inputs instead of silently clamping them", () => {

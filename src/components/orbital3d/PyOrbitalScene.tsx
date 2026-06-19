@@ -8,16 +8,20 @@ import {
 } from "@react-three/drei";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { MutableRefObject } from "react";
+import type { ReactNode } from "react";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import type {
   AxisAlignedBox3D,
   GlobalPhaseSign,
   POrbitalAxis,
 } from "../../models/pyOrbital3d";
+import { P_ORBITAL_AXES as pOrbitalAxes } from "../../models/pyOrbital3d";
 import { Orbital3DFallback } from "./Orbital3DFallback";
+import { POrbitalLabel } from "./OrbitalNotation";
 import { PyOrbitalSurface } from "./PyOrbitalSurface";
 import { SamplingBox3D } from "./SamplingBox3D";
 import type { SamplingBoxMode } from "./SamplingBoxControls";
+import type { Orbital3DViewMode } from "./orbital3dViewMode";
 
 interface PyOrbitalSceneProps {
   alpha: number;
@@ -25,6 +29,7 @@ interface PyOrbitalSceneProps {
   globalPhase: GlobalPhaseSign;
   mode: SamplingBoxMode;
   orbitalAxis: POrbitalAxis;
+  viewMode: Orbital3DViewMode;
   onBoxChange: (box: AxisAlignedBox3D) => void;
 }
 
@@ -74,7 +79,7 @@ function PhaseLabel({
   children,
   position,
 }: {
-  children: string;
+  children: ReactNode;
   position: [number, number, number];
 }) {
   return (
@@ -109,6 +114,7 @@ function SceneContent({
   globalPhase,
   mode,
   orbitalAxis,
+  viewMode,
   onBoxChange,
   resetKey,
 }: PyOrbitalSceneProps & { resetKey: number }) {
@@ -117,6 +123,7 @@ function SceneContent({
   const positiveSign = globalPhase === 1 ? "+" : "−";
   const negativeSign = globalPhase === 1 ? "−" : "+";
   const nodePlane = nodalPlaneConfig[orbitalAxis];
+  const isShellView = viewMode === "shell";
   const resolution = useMemo(() => {
     if (typeof window !== "undefined" && window.innerWidth < 760) return 24;
     return 32;
@@ -136,27 +143,65 @@ function SceneContent({
       <AxisLabel position={[0, 3.25, 0]}>y</AxisLabel>
       <AxisLabel position={[0, 0, 3.25]}>z</AxisLabel>
 
-      <mesh rotation={nodePlane.rotation}>
-        <planeGeometry args={[5.9, 5.9]} />
-        <meshStandardMaterial color="#7e766e" transparent opacity={0.18} depthWrite={false} />
-      </mesh>
-      <Html position={nodePlane.labelPosition} center className="orbital3d-node-label">
-        {nodePlane.label}
-      </Html>
+      {!isShellView ? (
+        <>
+          <mesh rotation={nodePlane.rotation}>
+            <planeGeometry args={[5.9, 5.9]} />
+            <meshStandardMaterial color="#7e766e" transparent opacity={0.18} depthWrite={false} />
+          </mesh>
+          <Html position={nodePlane.labelPosition} center className="orbital3d-node-label">
+            {nodePlane.label}
+          </Html>
+        </>
+      ) : (
+        <Html position={[0, 2.45, 2.35]} center className="orbital3d-node-label">
+          three separate p orbitals shown together
+        </Html>
+      )}
 
       <mesh>
         <sphereGeometry args={[0.11, 24, 16]} />
         <meshStandardMaterial color="#27231f" />
       </mesh>
 
-      <PyOrbitalSurface
-        alpha={alpha}
-        globalPhase={globalPhase}
-        orbitalAxis={orbitalAxis}
-        resolution={resolution}
-      />
-      <PhaseLabel position={phaseLabelPosition(orbitalAxis, 1)}>{positiveSign}</PhaseLabel>
-      <PhaseLabel position={phaseLabelPosition(orbitalAxis, -1)}>{negativeSign}</PhaseLabel>
+      {isShellView ? (
+        pOrbitalAxes.map((axis) => (
+          <PyOrbitalSurface
+            key={axis}
+            alpha={alpha}
+            globalPhase={globalPhase}
+            orbitalAxis={axis}
+            opacity={0.42}
+            resolution={resolution}
+          />
+        ))
+      ) : (
+        <PyOrbitalSurface
+          alpha={alpha}
+          globalPhase={globalPhase}
+          orbitalAxis={orbitalAxis}
+          resolution={resolution}
+        />
+      )}
+      {isShellView ? (
+        pOrbitalAxes.flatMap((axis) => [
+          <PhaseLabel key={`${axis}-positive`} position={phaseLabelPosition(axis, 1)}>
+            <span>
+              <POrbitalLabel axis={axis} /> {positiveSign}
+            </span>
+          </PhaseLabel>,
+          <PhaseLabel key={`${axis}-negative`} position={phaseLabelPosition(axis, -1)}>
+            <span>
+              <POrbitalLabel axis={axis} /> {negativeSign}
+            </span>
+          </PhaseLabel>,
+        ])
+      ) : (
+        <>
+          <PhaseLabel position={phaseLabelPosition(orbitalAxis, 1)}>{positiveSign}</PhaseLabel>
+          <PhaseLabel position={phaseLabelPosition(orbitalAxis, -1)}>{negativeSign}</PhaseLabel>
+        </>
+      )}
 
       <SamplingBox3D
         box={box}
@@ -193,6 +238,7 @@ export function PyOrbitalScene({
   globalPhase,
   mode,
   orbitalAxis,
+  viewMode,
   onBoxChange,
 }: PyOrbitalSceneProps) {
   const [resetKey, setResetKey] = useState(0);
@@ -201,7 +247,11 @@ export function PyOrbitalScene({
     <section className="orbital3d-scene-card" aria-label="Three-dimensional orbital view">
       <div className="orbital3d-canvas-wrap">
         <Canvas
-          aria-label={`Interactive three-dimensional p-${orbitalAxis} orbital with positive and negative phase lobes, a nodal plane, coordinate axes, and a movable sampling box.`}
+          aria-label={
+            viewMode === "shell"
+              ? "Interactive three-dimensional p-shell overview with p-x, p-y, and p-z orbitals, coordinate axes, and a movable sampling box."
+              : `Interactive three-dimensional p-${orbitalAxis} orbital with positive and negative phase lobes, a nodal plane, coordinate axes, and a movable sampling box.`
+          }
           camera={{ position: [4.2, 3.0, 5.2], fov: 42, near: 0.1, far: 100 }}
           dpr={[1, 1.5]}
           fallback={
@@ -209,6 +259,7 @@ export function PyOrbitalScene({
               box={box}
               globalPhase={globalPhase}
               orbitalAxis={orbitalAxis}
+              viewMode={viewMode}
             />
           }
           frameloop="demand"
@@ -219,6 +270,7 @@ export function PyOrbitalScene({
             globalPhase={globalPhase}
             mode={mode}
             orbitalAxis={orbitalAxis}
+            viewMode={viewMode}
             onBoxChange={onBoxChange}
             resetKey={resetKey}
           />
