@@ -24,7 +24,7 @@ const stages: readonly StageCopy[] = [
     id: "read",
     shortTitle: "Read ψ",
     title: "ψ is a signed wave amplitude—not a probability",
-    lead: "Every point in space gets a value ψ(x, y, z). Here we follow one line: the y axis through a pᵧ orbital. The sign tells phase, and the size tells amplitude.",
+    lead: "Every point in 3D space has coordinates (x, y, z). The orbital function ψ(x, y, z) assigns one signed amplitude to that point. In this view, we are only walking along the y-axis of a pᵧ orbital, so x = 0 and z = 0. The sign of ψ tells phase. The size of ψ tells amplitude. Electron density comes from |ψ|², not from ψ itself.",
     equation: "point (x, y, z)  →  ψ(x, y, z)",
     correction:
       "The +1 and −1 values on this page are scaled teaching values. They mean equal amplitude with opposite phase. They do not mean +100% and −100% probability.",
