@@ -1,18 +1,21 @@
 export type PhaseSign = 1 | -1;
 
 /**
- * A normalized, one-dimensional slice through a p-like teaching orbital.
- * The function has a node at x = 0 and reaches magnitude 1 at x = ±1.
- * It is a teaching model, not an atomic-orbital calculation.
+ * A scaled, one-dimensional slice along the lobe axis of a p-like teaching
+ * orbital. The coordinate is zero in the nodal plane, and the curve is scaled
+ * to reach magnitude 1 at coordinate = ±1.
+ *
+ * These values are relative wave amplitudes. They are not probabilities, not
+ * percentages, and not a normalized three-dimensional atomic-orbital result.
  */
 export function teachingPOrbital(
-  x: number,
+  coordinate: number,
   overallSign: PhaseSign = 1,
 ): number {
-  return overallSign * x * Math.exp((1 - x * x) / 2);
+  return overallSign * coordinate * Math.exp((1 - coordinate * coordinate) / 2);
 }
 
-/** Relative density contribution from one real-valued orbital. */
+/** Relative probability-density shape from the scaled real-valued amplitude. */
 export function relativeDensity(psi: number): number {
   return psi * psi;
 }
