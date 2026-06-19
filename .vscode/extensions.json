@@ -3,7 +3,6 @@
     "dbaeumer.vscode-eslint",
     "esbenp.prettier-vscode",
     "vitest.explorer",
-    "github.vscode-github-actions",
-    "ms-edgedevtools.vscode-edge-devtools"
+    "github.vscode-github-actions"
   ]
 }

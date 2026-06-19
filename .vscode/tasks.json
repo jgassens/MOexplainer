@@ -6,6 +6,11 @@
       "type": "shell",
       "command": "npm run dev -- --port 5176",
       "isBackground": true,
+      "options": {
+        "env": {
+          "REACT_EDITOR": "code"
+        }
+      },
       "problemMatcher": [],
       "presentation": {
         "panel": "dedicated",

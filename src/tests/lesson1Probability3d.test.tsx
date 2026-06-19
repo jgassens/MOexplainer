@@ -53,12 +53,14 @@ async function goToProbabilityStep(target: HTMLElement) {
     await new Promise((resolve) => window.setTimeout(resolve, 0));
   });
 
-  for (let attempt = 0; attempt < 20; attempt += 1) {
+  for (let attempt = 0; attempt < 80; attempt += 1) {
     if (target.textContent?.includes("What does the integral do?")) return;
     await act(async () => {
-      await new Promise((resolve) => window.setTimeout(resolve, 10));
+      await new Promise((resolve) => window.setTimeout(resolve, 25));
     });
   }
+
+  expect(target.textContent).toContain("What does the integral do?");
 }
 
 afterEach(() => {
