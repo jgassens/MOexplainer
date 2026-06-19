@@ -88,23 +88,20 @@ svg {
 }
 
 .brand-block {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+  display: grid;
+  gap: 10px;
   padding-bottom: 12px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.16);
 }
 
-.brand-mark {
-  display: grid;
-  place-items: center;
-  width: 42px;
-  height: 42px;
-  border-radius: var(--radius);
-  background: #f3c676;
-  color: #24322e;
-  font-weight: 800;
-  letter-spacing: 0;
+.brand-logo {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 5px;
+  background: #b89a57;
+  box-shadow: 0 12px 26px rgba(13, 16, 14, 0.28);
 }
 
 .brand-block p,
@@ -875,6 +872,9 @@ svg {
   }
 
   .brand-block {
+    grid-template-columns: minmax(112px, 150px) minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
     padding-bottom: 8px;
   }
 

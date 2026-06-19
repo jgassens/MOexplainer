@@ -8,6 +8,7 @@ export function AppShell() {
   const [activeIndex, setActiveIndex] = useState(0);
   const activeLesson = lessons[activeIndex];
   const ActiveLesson = lessonComponents[activeLesson.id];
+  const logoUrl = `${import.meta.env.BASE_URL}ceci-logo.png`;
   const progress = useMemo(
     () => ((activeIndex + 1) / lessons.length) * 100,
     [activeIndex],
@@ -56,11 +57,15 @@ export function AppShell() {
     <div className="app-shell">
       <aside className="sidebar">
         <div className="brand-block">
-          <span className="brand-mark" aria-hidden="true">
-            ψ
-          </span>
-          <div>
-            <p>Ceci n'est pas une orbitale</p>
+          <img
+            className="brand-logo"
+            src={logoUrl}
+            width="288"
+            height="192"
+            alt="Ceci n'est pas une orbitale logo showing a framed molecular orbital painting."
+          />
+          <div className="brand-copy">
+            <p>Guided molecular-orbital lessons</p>
             <strong>MO Explainer</strong>
           </div>
         </div>
