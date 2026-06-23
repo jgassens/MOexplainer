@@ -1,5 +1,6 @@
 import { useId, useMemo, useState, type ReactNode } from "react";
 import { LessonShell } from "../../components/LessonShell/LessonShell";
+import { scrollToPageTop } from "../../utils/scroll";
 import type { LessonComponentProps } from "../types";
 
 type Phase = 1 | -1;
@@ -917,6 +918,16 @@ export function CombinationLesson(props: LessonComponentProps) {
     props.onNext();
   };
 
+  const previousFromBottom = () => {
+    previous();
+    scrollToPageTop();
+  };
+
+  const nextFromBottom = () => {
+    next();
+    scrollToPageTop();
+  };
+
   const equalWeights = Math.abs(weightB - weightA) < 0.05;
   const strongerAtom = weightB > weightA ? "B" : "A";
   const weakerAtom = strongerAtom === "A" ? "B" : "A";
@@ -1087,7 +1098,7 @@ export function CombinationLesson(props: LessonComponentProps) {
         <div className="guided-actions">
           <button
             type="button"
-            onClick={previous}
+            onClick={previousFromBottom}
             disabled={atFirstStage && props.previousDisabled}
           >
             {atFirstStage ? "Previous lesson" : "Back one idea"}
@@ -1095,7 +1106,7 @@ export function CombinationLesson(props: LessonComponentProps) {
           <button
             type="button"
             className="guided-actions__primary"
-            onClick={next}
+            onClick={nextFromBottom}
             disabled={atLastStage && props.nextDisabled}
           >
             {atLastStage ? "Continue to bonding and antibonding" : "Continue"}

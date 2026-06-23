@@ -594,7 +594,7 @@
 
 .psi-cartoon-probe-line {
   stroke: #f0bd58;
-  stroke-width: 4;
+  stroke-linecap: round;
   opacity: 0.95;
 }
 
@@ -718,19 +718,48 @@
 }
 
 .psi-equation-line {
+  display: grid;
+  gap: 12px;
   min-width: 0;
   padding: 14px 16px;
   color: #25211e;
   background: #f7f4ee;
   border: 1px solid #d9d0c2;
   border-radius: 13px;
+}
+
+.psi-equation-row {
+  display: grid;
+  gap: 7px;
+}
+
+.psi-equation-row--live {
+  padding-top: 12px;
+  border-top: 1px solid #ded6cb;
+}
+
+.psi-equation-row__label {
+  color: #746a60;
+  font-family: system-ui, sans-serif;
+  font-size: 0.68rem;
+  font-weight: 850;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.psi-equation-row__math {
   font-family: Georgia, "Times New Roman", serif;
   font-size: clamp(1.12rem, 2.2vw, 1.6rem);
   font-weight: 700;
   line-height: 1.9;
 }
 
-.psi-equation-line sup {
+.psi-equation-row--live .psi-equation-row__math {
+  font-size: clamp(1.05rem, 1.9vw, 1.42rem);
+}
+
+.psi-equation-line sup,
+.psi-equation-row__math sup {
   font-size: 0.56em;
 }
 
@@ -752,10 +781,35 @@
   cursor: help;
 }
 
+.psi-equation-term--value {
+  color: #4f3714;
+  background: #fff7dd;
+  border-color: #e2c477;
+}
+
+.psi-equation-term--result {
+  color: #143d35;
+  background: #dff0ec;
+  border-color: #80ada3;
+  box-shadow: inset 0 0 0 1px rgba(128, 173, 163, 0.28);
+}
+
 .psi-equation-term:hover,
 .psi-equation-term:focus-visible {
   background: #dff0ec;
   border-color: #5e9185;
+}
+
+.psi-equation-term--value:hover,
+.psi-equation-term--value:focus-visible {
+  background: #fff0bd;
+  border-color: #ba8d25;
+}
+
+.psi-equation-term--result:hover,
+.psi-equation-term--result:focus-visible {
+  background: #cfe8e2;
+  border-color: #4d887c;
 }
 
 .psi-equation-tooltip {
@@ -799,27 +853,6 @@
 .psi-equation-term:focus-visible + .psi-equation-tooltip {
   opacity: 1;
   transform: translate(-50%, 0);
-}
-
-.psi-equation-substitution {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 7px;
-  grid-column: 1 / -1;
-}
-
-.psi-equation-substitution span {
-  min-width: 0;
-  padding: 8px 9px;
-  overflow-wrap: anywhere;
-  color: #3f382f;
-  background: #fff7dd;
-  border: 1px solid #ead6a3;
-  border-radius: 9px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 0.82rem;
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
 }
 
 .psi-equation-answer {
@@ -1581,10 +1614,6 @@
     justify-self: center;
   }
 
-  .psi-equation-substitution {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .psi-readout-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1614,7 +1643,6 @@
 
 @media (max-width: 520px) {
   .psi-stage-tabs,
-  .psi-equation-substitution,
   .psi-readout-grid {
     grid-template-columns: 1fr;
   }

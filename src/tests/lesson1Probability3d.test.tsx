@@ -85,6 +85,67 @@ describe("Lesson 1 probability in 3D step", () => {
     expect(target.textContent).toContain("probability in a region");
   });
 
+  it("lets the Read psi step switch the global phase convention in the equation and images", async () => {
+    const target = renderLesson();
+
+    expect(target.textContent).toContain("Phase convention s:");
+    expect(target.querySelector(".psi-equation-answer strong")?.textContent).toBe("ψ = −1.00");
+
+    const lobesBefore = Array.from(target.querySelectorAll(".psi-orbital-lobe"));
+    expect(lobesBefore[0]?.getAttribute("class")).toContain("psi-orbital-lobe--negative");
+    expect(lobesBefore[1]?.getAttribute("class")).toContain("psi-orbital-lobe--positive");
+
+    const reversePhaseButton = Array.from(target.querySelectorAll("button")).find(
+      (item) => item.textContent?.trim() === "s = −1",
+    );
+    expect(reversePhaseButton).toBeTruthy();
+
+    await act(async () => {
+      reversePhaseButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      await Promise.resolve();
+    });
+
+    expect(target.querySelector(".psi-equation-answer strong")?.textContent).toBe("ψ = +1.00");
+    expect(target.querySelector(".psi-equation-row--live")?.textContent).toContain("ψ(−1.00)");
+    expect(target.querySelector(".psi-equation-row--live")?.textContent).toContain("(−1)");
+    expect(target.querySelector(".psi-equation-row--live")?.textContent).toContain("+1.00");
+
+    const lobesAfter = Array.from(target.querySelectorAll(".psi-orbital-lobe"));
+    expect(lobesAfter[0]?.getAttribute("class")).toContain("psi-orbital-lobe--positive");
+    expect(lobesAfter[1]?.getAttribute("class")).toContain("psi-orbital-lobe--negative");
+  });
+
+  it("shows s explicitly in the Lesson 1 Phase sign tab equation", async () => {
+    const target = renderLesson();
+    const phaseTab = Array.from(target.querySelectorAll("button")).find((item) =>
+      item.textContent?.includes("Phase sign"),
+    );
+    expect(phaseTab).toBeTruthy();
+
+    await act(async () => {
+      phaseTab?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      await Promise.resolve();
+    });
+
+    expect(target.textContent).toContain("Global phase equation");
+    expect(target.textContent).toContain("ψs(y)");
+    expect(target.textContent).toContain("s ψ0(y)");
+    expect(target.textContent).toContain("s² = 1");
+
+    const reversePhaseButton = Array.from(target.querySelectorAll("button")).find(
+      (item) => item.textContent?.trim() === "s = −1",
+    );
+    expect(reversePhaseButton).toBeTruthy();
+
+    await act(async () => {
+      reversePhaseButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      await Promise.resolve();
+    });
+
+    expect(target.querySelector(".psi-equation-row--live")?.textContent).toContain("(−1)");
+    expect(target.querySelector(".psi-equation-answer strong")?.textContent).toContain("|ψ|² = 1.00");
+  });
+
   it("renders the fifth guided step and the volume-integral copy", async () => {
     const target = renderLesson();
 

@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { lessons } from "../../content/lessons";
 import { readObservation } from "../ObservationBox/storage";
 import { lessonComponents } from "../../lessons";
+import { scrollToPageTop } from "../../utils/scroll";
 
 export function AppShell() {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -15,7 +16,7 @@ export function AppShell() {
   );
 
   useEffect(() => {
-    window.scrollTo({ top: 0, left: 0 });
+    scrollToPageTop();
   }, [activeIndex]);
 
   const previous = () => setActiveIndex((index) => Math.max(0, index - 1));

@@ -16,6 +16,7 @@ import {
   teachingPOrbital,
   type PhaseSign,
 } from "../../models/teachingWave";
+import { scrollToPageTop } from "../../utils/scroll";
 import type { LessonComponentProps } from "../types";
 
 const LazyPyOrbitalExplorer = lazy(() =>
@@ -103,6 +104,9 @@ const PSI_BASELINE = 156;
 const PSI_SCALE = 88;
 const DENSITY_BASELINE = 354;
 const DENSITY_SCALE = 86;
+const CARTOON_NUCLEUS_X = 220;
+const CARTOON_LOBE_BELLY_OFFSET = 108;
+const CARTOON_LOBE_TIP_OFFSET = 172;
 const READOUT_LABELS: Record<ReadoutId, string> = {
   location: "Location",
   amplitude: "Wave amplitude",
@@ -130,6 +134,18 @@ function densityToSvg(value: number): number {
   return DENSITY_BASELINE - value * DENSITY_SCALE;
 }
 
+function yToCartoonProbeX(y: number): number {
+  const absY = Math.min(Math.abs(y), Y_MAX);
+  const sign = Math.sign(y);
+  const offset =
+    absY <= 1
+      ? absY * CARTOON_LOBE_BELLY_OFFSET
+      : CARTOON_LOBE_BELLY_OFFSET +
+        ((absY - 1) / (Y_MAX - 1)) * (CARTOON_LOBE_TIP_OFFSET - CARTOON_LOBE_BELLY_OFFSET);
+
+  return CARTOON_NUCLEUS_X + sign * offset;
+}
+
 function makePath(values: readonly { y: number; svgY: number }[]): string {
   return values
     .map(
@@ -143,11 +159,13 @@ function EquationTerm({
   children,
   description,
   label,
+  tone = "symbol",
   value,
 }: {
   children: ReactNode;
   description: string;
   label: string;
+  tone?: "symbol" | "value" | "result";
   value?: string;
 }) {
   const tooltipId = useId();
@@ -156,7 +174,7 @@ function EquationTerm({
     <span className="psi-equation-term-wrap">
       <button
         type="button"
-        className="psi-equation-term"
+        className={`psi-equation-term psi-equation-term--${tone}`}
         aria-describedby={tooltipId}
         aria-label={label}
       >
@@ -171,6 +189,23 @@ function EquationTerm({
   );
 }
 
+function EquationRow({
+  children,
+  label,
+  live = false,
+}: {
+  children: ReactNode;
+  label: string;
+  live?: boolean;
+}) {
+  return (
+    <div className={`psi-equation-row${live ? " psi-equation-row--live" : ""}`}>
+      <span className="psi-equation-row__label">{label}</span>
+      <div className="psi-equation-row__math">{children}</div>
+    </div>
+  );
+}
+
 function EquationWorkbench({
   activeReadout,
   density,
@@ -178,6 +213,7 @@ function EquationWorkbench({
   overallSign,
   psi,
   probeY,
+  stageId,
 }: {
   activeReadout: ReadoutId;
   density: number;
@@ -185,14 +221,30 @@ function EquationWorkbench({
   overallSign: PhaseSign;
   psi: number;
   probeY: number;
+  stageId: StageId;
 }) {
   const signValue = overallSign === 1 ? "+1" : "−1";
+  const basePsi = teachingPOrbital(probeY, 1);
   const exponentialValue = Math.exp((1 - probeY * probeY) / 2);
+  const exponentValue = (1 - probeY * probeY) / 2;
   const ySquared = probeY * probeY;
+  const yValue = formatSigned(probeY);
+  const basePsiValue = formatSigned(basePsi);
+  const psiValue = formatSigned(psi);
+  const magnitudeValue = magnitude.toFixed(2);
+  const densityValue = density.toFixed(2);
+  const ySquaredValue = ySquared.toFixed(4);
+  const exponentText = exponentValue.toFixed(2);
+  const exponentialText = exponentialValue.toFixed(2);
+  const isPhaseSignDensityEquation = stageId === "sign" && activeReadout === "density";
   const point = `(0, ${probeY.toFixed(2)}, 0)`;
-  const title = `${READOUT_LABELS[activeReadout]} equation`;
+  const title = isPhaseSignDensityEquation
+    ? "Global phase equation"
+    : `${READOUT_LABELS[activeReadout]} equation`;
   const summary =
-    activeReadout === "location"
+    isPhaseSignDensityEquation
+      ? "The s multiplier flips every wavefunction sign, then disappears from density because s² = 1."
+      : activeReadout === "location"
       ? "This fixes the point where the orbital function is being evaluated."
       : activeReadout === "amplitude"
         ? "This is the scaled pᵧ teaching function used by the graph and slider."
@@ -214,135 +266,381 @@ function EquationWorkbench({
         <div className="psi-equation-line" aria-label={`Equation for ${READOUT_LABELS[activeReadout]}`}>
           {activeReadout === "location" ? (
             <>
-              <EquationTerm
-                label="r squared"
-                value={`r² = ${ySquared.toFixed(4)}`}
-                description="Distance from the nucleus enters the fade-out part of the orbital. Along this slice, x and z are fixed at zero."
-              >
-                r²
-              </EquationTerm>{" "}
-              ={" "}
-              <EquationTerm
-                label="x coordinate"
-                value="x = 0"
-                description="We are not moving left or right; this view walks only along the y axis."
-              >
-                x²
-              </EquationTerm>{" "}
-              +{" "}
-              <EquationTerm
-                label="y coordinate"
-                value={`y = ${probeY.toFixed(2)}`}
-                description="This is the slider value. It chooses the point in the negative lobe, node, or positive lobe."
-              >
-                y²
-              </EquationTerm>{" "}
-              +{" "}
-              <EquationTerm
-                label="z coordinate"
-                value="z = 0"
-                description="We are staying in the orbital axis line, not moving above or below it."
-              >
-                z²
-              </EquationTerm>
+              <EquationRow label="Reference equation">
+                <EquationTerm
+                  label="r squared"
+                  value={`r² = ${ySquaredValue}`}
+                  description="Distance from the nucleus enters the exponential part of the orbital. Along this slice, x and z are fixed at zero."
+                >
+                  r²
+                </EquationTerm>{" "}
+                ={" "}
+                <EquationTerm
+                  label="x coordinate"
+                  value="x = 0"
+                  description="We are not moving left or right; this view walks only along the y axis."
+                >
+                  x²
+                </EquationTerm>{" "}
+                +{" "}
+                <EquationTerm
+                  label="y coordinate"
+                  value={`y = ${probeY.toFixed(2)}`}
+                  description="This is the slider value. It chooses the point in the negative lobe, node, or positive lobe."
+                >
+                  y²
+                </EquationTerm>{" "}
+                +{" "}
+                <EquationTerm
+                  label="z coordinate"
+                  value="z = 0"
+                  description="We are staying in the orbital axis line, not moving above or below it."
+                >
+                  z²
+                </EquationTerm>
+              </EquationRow>
+              <EquationRow label="Live substitution" live>
+                <EquationTerm
+                  label="current r squared"
+                  value={`r² = ${ySquaredValue}`}
+                  description="This is the squared distance for the currently selected point."
+                  tone="result"
+                >
+                  r²
+                </EquationTerm>{" "}
+                ={" "}
+                <EquationTerm
+                  label="current x value"
+                  value="x = 0"
+                  description="The x coordinate stays fixed at zero in this y-axis slice."
+                  tone="value"
+                >
+                  (0)²
+                </EquationTerm>{" "}
+                +{" "}
+                <EquationTerm
+                  label="current y value"
+                  value={`y = ${probeY.toFixed(2)}`}
+                  description="This number comes directly from the slider."
+                  tone="value"
+                >
+                  ({yValue})²
+                </EquationTerm>{" "}
+                +{" "}
+                <EquationTerm
+                  label="current z value"
+                  value="z = 0"
+                  description="The z coordinate stays fixed at zero in this y-axis slice."
+                  tone="value"
+                >
+                  (0)²
+                </EquationTerm>{" "}
+                ={" "}
+                <EquationTerm
+                  label="current r squared answer"
+                  value={`r² = ${ySquaredValue}`}
+                  description="Only the y coordinate contributes here because x and z are zero."
+                  tone="result"
+                >
+                  {ySquaredValue}
+                </EquationTerm>
+              </EquationRow>
             </>
           ) : activeReadout === "amplitude" ? (
             <>
-              <EquationTerm
-                label="wave amplitude psi"
-                value={`ψ = ${formatSigned(psi)}`}
-                description="The signed wave-amplitude value at the selected point. Its sign is phase, not charge."
-              >
-                ψ(y)
-              </EquationTerm>{" "}
-              ={" "}
-              <EquationTerm
-                label="global phase sign"
-                value={`s = ${signValue}`}
-                description="This flips every sign in the orbital. It changes phase labels, not probability density."
-              >
-                s
-              </EquationTerm>{" "}
-              <EquationTerm
-                label="position on y axis"
-                value={`y = ${probeY.toFixed(2)}`}
-                description="The pᵧ part gives opposite signs on opposite sides of the nodal plane and zero at y = 0."
-              >
-                y
-              </EquationTerm>{" "}
-              <EquationTerm
-                label="Gaussian fade-out"
-                value={`exp((1 − y²)/2) = ${exponentialValue.toFixed(2)}`}
-                description="This makes the orbital fade as you move away from the nucleus. The scale is chosen so |ψ| reaches 1 near y = ±1."
-              >
-                e<sup>(1 − y²)/2</sup>
-              </EquationTerm>
+              <EquationRow label="Reference equation">
+                <EquationTerm
+                  label="wave amplitude psi"
+                  value={`ψ = ${psiValue}`}
+                  description="The signed wave-amplitude value at the selected point. Its sign is phase, not charge."
+                >
+                  ψ(y)
+                </EquationTerm>{" "}
+                ={" "}
+                <EquationTerm
+                  label="global phase sign"
+                  value={`s = ${signValue}`}
+                  description="This chooses the global phase convention. It can flip every sign and color in the orbital without changing probability density."
+                >
+                  s
+                </EquationTerm>{" "}
+                <EquationTerm
+                  label="position on y axis"
+                  value={`y = ${probeY.toFixed(2)}`}
+                  description="The pᵧ part gives opposite signs on opposite sides of the nodal plane and zero at y = 0."
+                >
+                  y
+                </EquationTerm>{" "}
+                <EquationTerm
+                  label="exponential fade-out term"
+                  value={`e^((1 − y²)/2) = ${exponentialText}`}
+                  description="This is the exponential part of the scaled pᵧ teaching function. It tapers the orbital away from the lobe centers."
+                >
+                  e<sup>(1 − y²)/2</sup>
+                </EquationTerm>
+              </EquationRow>
+              <EquationRow label="Live substitution" live>
+                <EquationTerm
+                  label="psi at the selected y value"
+                  value={`ψ(${yValue}) = ${psiValue}`}
+                  description="This is the final signed wave-amplitude value for the selected point."
+                  tone="result"
+                >
+                  ψ({yValue})
+                </EquationTerm>{" "}
+                ={" "}
+                <EquationTerm
+                  label="current phase sign"
+                  value={`s = ${signValue}`}
+                  description="The phase sign multiplies the whole orbital by +1 or −1."
+                  tone="value"
+                >
+                  ({signValue})
+                </EquationTerm>{" "}
+                ·{" "}
+                <EquationTerm
+                  label="current y value"
+                  value={`y = ${probeY.toFixed(2)}`}
+                  description="The selected position supplies the pᵧ sign and zero at the node."
+                  tone="value"
+                >
+                  ({yValue})
+                </EquationTerm>{" "}
+                ·{" "}
+                <EquationTerm
+                  label="current exponential factor"
+                  value={`e^(${exponentText}) = ${exponentialText}`}
+                  description="This is the value of the exponential part at the selected y coordinate."
+                  tone="value"
+                >
+                  e<sup>(1 − ({yValue})²)/2</sup>
+                </EquationTerm>{" "}
+                ={" "}
+                <EquationTerm
+                  label="numerical phase sign"
+                  value={`s = ${signValue}`}
+                  description="The phase sign is now inserted as its current numerical value."
+                  tone="value"
+                >
+                  ({signValue})
+                </EquationTerm>{" "}
+                ×{" "}
+                <EquationTerm
+                  label="numerical y factor"
+                  value={`y = ${probeY.toFixed(2)}`}
+                  description="The selected position gives the pᵧ slice its sign and size."
+                  tone="value"
+                >
+                  ({yValue})
+                </EquationTerm>{" "}
+                ×{" "}
+                <EquationTerm
+                  label="numerical exponential factor"
+                  value={`e^(${exponentText}) = ${exponentialText}`}
+                  description="The exponential part has now been evaluated numerically."
+                  tone="value"
+                >
+                  ({exponentialText})
+                </EquationTerm>{" "}
+                ={" "}
+                <EquationTerm
+                  label="wave amplitude answer"
+                  value={`ψ = ${psiValue}`}
+                  description="The product gives the signed wave amplitude at this point."
+                  tone="result"
+                >
+                  {psiValue}
+                </EquationTerm>
+              </EquationRow>
             </>
           ) : activeReadout === "magnitude" ? (
             <>
-              <EquationTerm
-                label="size of psi"
-                value={`|ψ| = ${magnitude.toFixed(2)}`}
-                description="This is how large the wave amplitude is at the selected point after ignoring whether the phase sign is positive or negative."
-              >
-                |ψ(y)|
-              </EquationTerm>{" "}
-              ={" "}
-              <EquationTerm
-                label="absolute value"
-                value={`abs(${formatSigned(psi)}) = ${magnitude.toFixed(2)}`}
-                description="Absolute value removes the sign. A large positive ψ and a large negative ψ both have large magnitude."
-              >
-                √(ψ(y)²)
-              </EquationTerm>
+              <EquationRow label="Reference equation">
+                <EquationTerm
+                  label="size of psi"
+                  value={`|ψ| = ${magnitudeValue}`}
+                  description="This is how large the wave amplitude is at the selected point after ignoring whether the phase sign is positive or negative."
+                >
+                  |ψ(y)|
+                </EquationTerm>{" "}
+                ={" "}
+                <EquationTerm
+                  label="absolute value"
+                  value={`|${psiValue}| = ${magnitudeValue}`}
+                  description="Absolute value removes the sign. A large positive ψ and a large negative ψ both have large magnitude."
+                >
+                  √(ψ(y)²)
+                </EquationTerm>
+              </EquationRow>
+              <EquationRow label="Live substitution" live>
+                <EquationTerm
+                  label="current magnitude"
+                  value={`|ψ| = ${magnitudeValue}`}
+                  description="This is the size of the current wave amplitude before squaring."
+                  tone="result"
+                >
+                  |ψ({yValue})|
+                </EquationTerm>{" "}
+                ={" "}
+                <EquationTerm
+                  label="current psi value"
+                  value={`ψ = ${psiValue}`}
+                  description="The sign is still visible here before absolute value removes it."
+                  tone="value"
+                >
+                  |{psiValue}|
+                </EquationTerm>{" "}
+                ={" "}
+                <EquationTerm
+                  label="magnitude answer"
+                  value={`|ψ| = ${magnitudeValue}`}
+                  description="After taking absolute value, only the size remains."
+                  tone="result"
+                >
+                  {magnitudeValue}
+                </EquationTerm>
+              </EquationRow>
+            </>
+          ) : isPhaseSignDensityEquation ? (
+            <>
+              <EquationRow label="Reference equation">
+                <EquationTerm
+                  label="phase-adjusted wavefunction"
+                  value={`ψₛ = ${psiValue}`}
+                  description="This is the same orbital after applying the global phase convention s."
+                >
+                  ψ<sub>s</sub>(y)
+                </EquationTerm>{" "}
+                ={" "}
+                <EquationTerm
+                  label="global phase convention"
+                  value={`s = ${signValue}`}
+                  description="Chapter 1 treats the sign and color of an orbital as phase, not charge. Choosing s = −1 reverses every sign."
+                >
+                  s
+                </EquationTerm>{" "}
+                <EquationTerm
+                  label="original wavefunction"
+                  value={`ψ₀ = ${basePsiValue}`}
+                  description="This is the starting pᵧ wavefunction before the global phase convention is applied."
+                >
+                  ψ<sub>0</sub>(y)
+                </EquationTerm>
+                {"; "}
+                <EquationTerm
+                  label="probability density"
+                  value={`|ψ|² = ${densityValue}`}
+                  description="Density comes from squaring the wavefunction, so it does not keep the global phase sign."
+                >
+                  ρ<sub>s</sub>(y)
+                </EquationTerm>{" "}
+                = |s ψ<sub>0</sub>(y)|² = |ψ<sub>0</sub>(y)|²
+              </EquationRow>
+              <EquationRow label="Live substitution" live>
+                <EquationTerm
+                  label="phase-adjusted wavefunction at this point"
+                  value={`ψₛ(${yValue}) = ${psiValue}`}
+                  description="This value flips sign when s changes."
+                  tone="result"
+                >
+                  ψ<sub>s</sub>({yValue})
+                </EquationTerm>{" "}
+                ={" "}
+                <EquationTerm
+                  label="current s value"
+                  value={`s = ${signValue}`}
+                  description="This is the selected global phase convention."
+                  tone="value"
+                >
+                  ({signValue})
+                </EquationTerm>{" "}
+                ×{" "}
+                <EquationTerm
+                  label="original psi value"
+                  value={`ψ₀(${yValue}) = ${basePsiValue}`}
+                  description="The unflipped pᵧ value at the selected point."
+                  tone="value"
+                >
+                  ({basePsiValue})
+                </EquationTerm>{" "}
+                ={" "}
+                <EquationTerm
+                  label="signed wavefunction after applying s"
+                  value={`ψₛ = ${psiValue}`}
+                  description="The displayed phase sign changes here."
+                  tone="result"
+                >
+                  {psiValue}
+                </EquationTerm>
+                {"; "}
+                <EquationTerm
+                  label="density after squaring"
+                  value={`ρ = ${densityValue}`}
+                  description="Squaring removes the global sign, so this value stays the same when s flips."
+                  tone="result"
+                >
+                  ρ<sub>s</sub>({yValue})
+                </EquationTerm>{" "}
+                = |{psiValue}|² = {densityValue}
+              </EquationRow>
             </>
           ) : (
             <>
-              <EquationTerm
-                label="relative probability density"
-                value={`ρ = ${density.toFixed(2)}`}
-                description="This scaled value is the relative density at one point, not the probability of finding the electron in a whole region."
-              >
-                ρ(y)
-              </EquationTerm>{" "}
-              ={" "}
-              <EquationTerm
-                label="squared magnitude"
-                value={`|ψ|² = ${magnitude.toFixed(2)}² = ${density.toFixed(2)}`}
-                description="Squaring removes the sign, so opposite phases can have the same density."
-              >
-                |ψ(y)|²
-              </EquationTerm>
-            </>
-          )}
-        </div>
-
-        <div className="psi-equation-substitution" aria-label="Live substitution values">
-          {activeReadout === "location" ? (
-            <>
-              <span>x = 0</span>
-              <span>y = {probeY.toFixed(2)}</span>
-              <span>z = 0</span>
-              <span>r² = {ySquared.toFixed(4)}</span>
-            </>
-          ) : activeReadout === "amplitude" ? (
-            <>
-              <span>s = {signValue}</span>
-              <span>y = {probeY.toFixed(2)}</span>
-              <span>fade = {exponentialValue.toFixed(2)}</span>
-              <span>ψ = {formatSigned(psi)}</span>
-            </>
-          ) : activeReadout === "magnitude" ? (
-            <>
-              <span>ψ = {formatSigned(psi)}</span>
-              <span>ψ² = {(psi * psi).toFixed(2)}</span>
-              <span>|ψ| = {magnitude.toFixed(2)}</span>
-            </>
-          ) : (
-            <>
-              <span>ψ = {formatSigned(psi)}</span>
-              <span>|ψ| = {magnitude.toFixed(2)}</span>
-              <span>|ψ|² = {density.toFixed(2)}</span>
+              <EquationRow label="Reference equation">
+                <EquationTerm
+                  label="relative probability density"
+                  value={`ρ = ${densityValue}`}
+                  description="This scaled value is the relative density at one point, not the probability of finding the electron in a whole region."
+                >
+                  ρ(y)
+                </EquationTerm>{" "}
+                ={" "}
+                <EquationTerm
+                  label="squared magnitude"
+                  value={`|ψ|² = ${magnitudeValue}² = ${densityValue}`}
+                  description="Squaring removes the sign, so opposite phases can have the same density."
+                >
+                  |ψ(y)|²
+                </EquationTerm>
+              </EquationRow>
+              <EquationRow label="Live substitution" live>
+                <EquationTerm
+                  label="density at the selected y value"
+                  value={`ρ(${yValue}) = ${densityValue}`}
+                  description="This is the local relative probability density at the selected point."
+                  tone="result"
+                >
+                  ρ({yValue})
+                </EquationTerm>{" "}
+                ={" "}
+                <EquationTerm
+                  label="current psi value"
+                  value={`ψ = ${psiValue}`}
+                  description="The signed wave amplitude is squared in the density equation."
+                  tone="value"
+                >
+                  |{psiValue}|
+                </EquationTerm>
+                <sup>2</sup>{" "}
+                ={" "}
+                <EquationTerm
+                  label="current magnitude squared"
+                  value={`|ψ| = ${magnitudeValue}`}
+                  description="The magnitude is the size of the amplitude after ignoring phase sign."
+                  tone="value"
+                >
+                  ({magnitudeValue})²
+                </EquationTerm>{" "}
+                ={" "}
+                <EquationTerm
+                  label="probability-density answer"
+                  value={`|ψ|² = ${densityValue}`}
+                  description="This is density at a point in the scaled teaching model, not probability for a region."
+                  tone="result"
+                >
+                  {densityValue}
+                </EquationTerm>
+              </EquationRow>
             </>
           )}
         </div>
@@ -352,11 +650,13 @@ function EquationWorkbench({
           <strong>
             {activeReadout === "location"
               ? point
-              : activeReadout === "amplitude"
-                ? `ψ = ${formatSigned(psi)}`
+            : activeReadout === "amplitude"
+                ? `ψ = ${psiValue}`
                 : activeReadout === "magnitude"
-                  ? `|ψ| = ${magnitude.toFixed(2)}`
-                  : `|ψ|² = ${density.toFixed(2)}`}
+                  ? `|ψ| = ${magnitudeValue}`
+                  : isPhaseSignDensityEquation
+                    ? `ψ = ${psiValue}; |ψ|² = ${densityValue}`
+                  : `|ψ|² = ${densityValue}`}
           </strong>
         </div>
       </div>
@@ -727,14 +1027,17 @@ function OrbitalCartoon({
     teachingPOrbital(-1, overallSign) >= 0 ? "positive" : "negative";
   const rightSign =
     teachingPOrbital(1, overallSign) >= 0 ? "positive" : "negative";
-  const probePosition = 48 + ((probeY - Y_MIN) / (Y_MAX - Y_MIN)) * 344;
+  const probePosition = yToCartoonProbeX(probeY);
+  const probeMagnitude = Math.min(1, Math.abs(teachingPOrbital(probeY, overallSign)));
+  const probeLineWidth = 2.5 + probeMagnitude * 11;
+  const probeRadius = 4 + probeMagnitude * 2.5;
 
   return (
     <svg
       className="psi-orbital-cartoon"
       viewBox="0 0 440 250"
       role="img"
-      aria-label="Textbook-style horizontal p y orbital with x, y, and z axes, opposite phase lobes, and the x z nodal plane through the nucleus"
+      aria-label="Textbook-style horizontal p y orbital with x, y, and z axes, opposite phase lobes, the x z nodal plane through the nucleus, and a probe marker whose thickness follows the local amplitude size"
     >
       <defs>
         <marker
@@ -828,10 +1131,41 @@ function OrbitalCartoon({
         x2={probePosition}
         y1="70"
         y2="181"
+        strokeWidth={probeLineWidth}
         className="psi-cartoon-probe-line"
       />
-      <circle cx={probePosition} cy="125" r="5" className="psi-cartoon-probe" />
+      <circle cx={probePosition} cy="125" r={probeRadius} className="psi-cartoon-probe" />
     </svg>
+  );
+}
+
+function PhaseSignToggle({
+  overallSign,
+  onChange,
+}: {
+  overallSign: PhaseSign;
+  onChange: (value: PhaseSign) => void;
+}) {
+  return (
+    <div className="psi-sign-toggle" aria-label="Phase convention multiplier s">
+      <span>Phase convention s:</span>
+      <button
+        type="button"
+        className={overallSign === 1 ? "is-active" : ""}
+        onClick={() => onChange(1)}
+        aria-pressed={overallSign === 1}
+      >
+        s = +1
+      </button>
+      <button
+        type="button"
+        className={overallSign === -1 ? "is-active" : ""}
+        onClick={() => onChange(-1)}
+        aria-pressed={overallSign === -1}
+      >
+        s = −1
+      </button>
+    </div>
   );
 }
 
@@ -851,6 +1185,7 @@ export function PhaseLesson(props: LessonComponentProps) {
   const atNode = Math.abs(probeY) < 0.06;
   const atFirstStage = stageIndex === 0;
   const atLastStage = stageIndex === stages.length - 1;
+  const showPhaseConventionToggle = stage.id === "read" || stage.id === "sign";
 
   useEffect(() => {
     setActiveReadout(defaultReadoutForStage(stage.id));
@@ -878,6 +1213,16 @@ export function PhaseLesson(props: LessonComponentProps) {
       return;
     }
     props.onNext();
+  };
+
+  const previousFromBottom = () => {
+    previous();
+    scrollToPageTop();
+  };
+
+  const nextFromBottom = () => {
+    next();
+    scrollToPageTop();
   };
 
   const feedback = stage.id === "probability3d"
@@ -1006,26 +1351,8 @@ export function PhaseLesson(props: LessonComponentProps) {
                   +y lobe
                 </button>
               </div>
-              {stage.id === "sign" ? (
-                <div className="psi-sign-toggle" aria-label="Global phase sign">
-                  <span>Flip every sign:</span>
-                  <button
-                    type="button"
-                    className={overallSign === 1 ? "is-active" : ""}
-                    onClick={() => setOverallSign(1)}
-                    aria-pressed={overallSign === 1}
-                  >
-                    original signs
-                  </button>
-                  <button
-                    type="button"
-                    className={overallSign === -1 ? "is-active" : ""}
-                    onClick={() => setOverallSign(-1)}
-                    aria-pressed={overallSign === -1}
-                  >
-                    flip all signs
-                  </button>
-                </div>
+              {showPhaseConventionToggle ? (
+                <PhaseSignToggle overallSign={overallSign} onChange={setOverallSign} />
               ) : null}
             </section>
 
@@ -1036,6 +1363,7 @@ export function PhaseLesson(props: LessonComponentProps) {
               overallSign={overallSign}
               psi={psi}
               probeY={probeY}
+              stageId={stage.id}
             />
 
             <section className="psi-readout-grid" aria-label="Values at the selected point">
@@ -1094,13 +1422,13 @@ export function PhaseLesson(props: LessonComponentProps) {
         </details>
 
         <nav className="psi-stage-actions" aria-label="Stage navigation">
-          <button type="button" onClick={previous} disabled={props.previousDisabled && atFirstStage}>
+          <button type="button" onClick={previousFromBottom} disabled={props.previousDisabled && atFirstStage}>
             {atFirstStage ? "Previous lesson" : "Previous step"}
           </button>
           <span>
             Step {stageIndex + 1} of {stages.length}
           </span>
-          <button type="button" onClick={next} disabled={props.nextDisabled && atLastStage}>
+          <button type="button" onClick={nextFromBottom} disabled={props.nextDisabled && atLastStage}>
             {atLastStage ? "Next lesson" : "Next step"}
           </button>
         </nav>
