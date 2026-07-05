@@ -953,6 +953,21 @@
   }
 }
 
+@media (max-width: 1320px) {
+  .stage-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .stage-control-panel {
+    grid-template-columns: minmax(0, 0.82fr) minmax(0, 1fr);
+  }
+
+  .stage-control-panel .plain-equation,
+  .stage-control-panel .weight-panel {
+    grid-column: 1 / -1;
+  }
+}
+
 @media (max-width: 720px) {
   .lesson-question {
     grid-template-columns: 1fr;
@@ -997,6 +1012,10 @@
     top: 8px;
     gap: 8px;
     padding: 8px;
+  }
+
+  .stage-control-panel {
+    grid-template-columns: 1fr;
   }
 
   .combination-stage .guided-control-rail .plain-equation {
