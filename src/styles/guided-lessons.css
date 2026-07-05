@@ -151,6 +151,10 @@
   line-height: 1.62;
 }
 
+.combination-stage .guided-lead {
+  line-height: calc(0.91rem * 1.52);
+}
+
 .plain-equation {
   padding: 15px;
   overflow-wrap: anywhere;
@@ -429,6 +433,10 @@
   margin-top: 10px;
 }
 
+.weight-panel__note {
+  margin-top: 10px;
+}
+
 .probe-presets button,
 .weight-presets button,
 .sign-choice button,
@@ -544,6 +552,10 @@
   position: static;
 }
 
+.combination-equation-focus {
+  min-width: 0;
+}
+
 .choice-panel,
 .weight-panel {
   display: grid;
@@ -554,6 +566,15 @@
 .choice-panel h3 {
   margin: 0;
   font-size: 0.92rem;
+}
+
+.choice-panel__consequence {
+  padding: 10px 11px;
+  color: #214d46;
+  background: #eef8f4;
+  border: 1px solid #bddbd0;
+  border-radius: 10px;
+  font-weight: 650;
 }
 
 .point-addition {
@@ -730,7 +751,7 @@
   width: 100%;
 }
 
-@media (max-width: 1040px) {
+@media (max-width: 1120px) {
   .guided-stage,
   .combination-stage {
     grid-template-columns: 1fr;
@@ -1015,18 +1036,19 @@
 .combine-equation-workbench {
   display: grid;
   gap: 14px;
-  margin-top: 12px;
-  padding: 16px;
+  margin-top: 0;
+  padding: 18px;
   background: #fffdf8;
   border: 1px solid #ded3c5;
   border-radius: 14px;
+  box-shadow: 0 12px 30px rgba(48, 39, 28, 0.08);
 }
 
 .combine-equation-header {
   display: grid;
   grid-template-columns: minmax(0, 0.8fr) minmax(260px, 1fr);
   gap: 12px;
-  align-items: end;
+  align-items: start;
 }
 
 .combine-equation-header span,
@@ -1047,6 +1069,7 @@
 
 .combine-equation-header p,
 .combine-equation-note,
+.combine-equation-stage-note,
 .combine-equation-answer p {
   margin: 0;
   color: #665e56;
@@ -1058,6 +1081,15 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
+}
+
+.combine-equation-stage-note {
+  padding: 10px 12px;
+  color: #174c45;
+  background: #eef8f4;
+  border: 1px solid #c3ded4;
+  border-radius: 10px;
+  font-weight: 700;
 }
 
 .combine-equation-tabs button {
@@ -1087,23 +1119,52 @@
 
 .combine-equation-body {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(210px, 0.34fr);
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 0.34fr);
   gap: 12px;
   align-items: start;
 }
 
 .combine-equation-line {
+  display: grid;
+  gap: 12px;
   min-width: 0;
-  padding: 14px 16px;
+  padding: 15px 16px;
   overflow-wrap: anywhere;
   color: #25211e;
   background: #f7f4ee;
   border: 1px solid #d9d0c2;
   border-radius: 13px;
+}
+
+.combine-equation-row {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.combine-equation-row + .combine-equation-row {
+  padding-top: 12px;
+  border-top: 1px solid #ded4c7;
+}
+
+.combine-equation-row__label {
+  color: #746a60;
+  font-family: system-ui, sans-serif;
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.combine-equation-row__math {
   font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(1.05rem, 2.1vw, 1.48rem);
+  font-size: clamp(1.02rem, 1.65vw, 1.4rem);
   font-weight: 700;
   line-height: 1.9;
+}
+
+.combine-equation-row--live .combine-equation-row__label {
+  color: #7b451e;
 }
 
 .combine-equation-line sub,
@@ -1129,10 +1190,46 @@
   cursor: help;
 }
 
+.combine-equation-term--value {
+  color: #4b3814;
+  background: #fff4d2;
+  border-color: #dcbf70;
+}
+
+.combine-equation-term--result {
+  color: #173f4b;
+  background: #e8f2f8;
+  border-color: #89b7cd;
+}
+
+.combine-equation-term--overlap {
+  color: #653012;
+  background: #fdf0e5;
+  border-color: #d9a27b;
+}
+
 .combine-equation-term:hover,
 .combine-equation-term:focus-visible {
   background: #dff0ec;
   border-color: #5e9185;
+}
+
+.combine-equation-term--value:hover,
+.combine-equation-term--value:focus-visible {
+  background: #ffedb8;
+  border-color: #b98a2e;
+}
+
+.combine-equation-term--result:hover,
+.combine-equation-term--result:focus-visible {
+  background: #dbeaf3;
+  border-color: #5f9fbb;
+}
+
+.combine-equation-term--overlap:hover,
+.combine-equation-term--overlap:focus-visible {
+  background: #f9dfcc;
+  border-color: #b9774a;
 }
 
 .combine-equation-tooltip {
@@ -1142,14 +1239,14 @@
   left: 50%;
   display: grid;
   gap: 5px;
-  width: min(260px, 78vw);
+  width: min(340px, 82vw);
   padding: 10px 11px;
   color: #fdfbf7;
   background: #25372f;
   border-radius: 10px;
   box-shadow: 0 14px 34px rgba(35, 31, 27, 0.2);
   font-family: system-ui, sans-serif;
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   font-weight: 550;
   line-height: 1.35;
   opacity: 0;
@@ -1193,6 +1290,19 @@
   font-family: Georgia, "Times New Roman", serif;
   font-size: clamp(1.08rem, 1.8vw, 1.38rem);
   font-variant-numeric: tabular-nums;
+}
+
+.combine-equation-teaching {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 12px 13px;
+  color: #214d46;
+  background: #eef8f4;
+  border: 1px solid #bddbd0;
+  border-radius: 11px;
+  font-size: 0.92rem;
+  font-weight: 650;
+  line-height: 1.45;
 }
 
 .combine-equation-substitution {
@@ -1239,8 +1349,11 @@
 
   .combine-equation-line {
     padding: 12px;
-    font-size: 1.02rem;
     line-height: 1.95;
+  }
+
+  .combine-equation-row__math {
+    font-size: 1.02rem;
   }
 
   .combine-equation-tooltip {

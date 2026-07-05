@@ -18,20 +18,20 @@ const stages: readonly StageCopy[] = [
   {
     id: "one-point",
     shortTitle: "One point",
-    title: "First, add the two orbital values at one point",
-    lead: "At a chosen point in space, orbital A gives one signed number and orbital B gives another. Add those two numbers. Matching signs reinforce; opposite signs cancel.",
+    title: "Start with the π part of a C=C bond",
+    lead: "In ethylene, the C=C double bond has a σ bond plus a π bond. This lesson is about the π part: two neighboring p orbitals overlapping side-by-side. Match the center-facing signs to build the bonding π MO, the orbital that becomes the π bond when it holds two electrons. Flip one p orbital to make the antibonding π* MO, where the signs cancel between the atoms and create a node.",
   },
   {
     id: "all-space",
     shortTitle: "Every point",
-    title: "A molecular orbital repeats that addition everywhere",
-    lead: "Repeat the signed addition at every point. Matching signs create continuous same-phase regions across the atoms; opposite signs create a nodal surface where the amplitude is zero.",
+    title: "Add the wavefunctions across the whole bond region",
+    lead: "A molecular orbital is not made by adding two orbital colors at one spot. It is a wavefunction spread through space. To build a π or π* molecular orbital, the app combines the two p-orbital wavefunctions across the region around both atoms. At any one point, the MO value equals the value from p orbital A plus the value from p orbital B; then that same addition is repeated at every point, not just at the marked dot.",
   },
   {
     id: "weights",
     shortTitle: "Weights",
-    title: "Weights change how strongly each starting orbital contributes",
-    lead: "Weights scale wave amplitudes before addition. The molecular orbital changes first; squaring the combined ψ gives |ψ|², so unequal weights shift the density distribution toward the larger contribution.",
+    title: "Weights say how much each starting orbital contributes",
+    lead: "In ψ = cA φA + cB φB, cA and cB are weights. Equal weights are the symmetric reference: two equivalent carbon p orbitals in ethylene contribute equally to π and π*. Unequal weights make a polarized MO, which is what happens in a heteroatom case such as C=O: the bonding π MO leans toward oxygen, while π* has more carbon character.",
   },
 ] as const;
 
@@ -156,11 +156,13 @@ function CombinationEquationTerm({
   children,
   description,
   label,
+  tone = "base",
   value,
 }: {
   children: ReactNode;
   description: string;
   label: string;
+  tone?: "base" | "value" | "result" | "overlap";
   value?: string;
 }) {
   const tooltipId = useId();
@@ -169,7 +171,7 @@ function CombinationEquationTerm({
     <span className="combine-equation-term-wrap">
       <button
         type="button"
-        className="combine-equation-term"
+        className={`combine-equation-term combine-equation-term--${tone}`}
         aria-describedby={tooltipId}
         aria-label={label}
       >
@@ -184,12 +186,31 @@ function CombinationEquationTerm({
   );
 }
 
+function CombinationEquationRow({
+  children,
+  label,
+  live = false,
+}: {
+  children: ReactNode;
+  label: string;
+  live?: boolean;
+}) {
+  return (
+    <div className={`combine-equation-row ${live ? "combine-equation-row--live" : ""}`}>
+      <span className="combine-equation-row__label">{label}</span>
+      <div className="combine-equation-row__math">{children}</div>
+    </div>
+  );
+}
+
 function CombinationEquationWorkbench({
   phaseB,
+  stageId,
   weightA,
   weightB,
 }: {
   phaseB: Phase;
+  stageId: StageId;
   weightA: number;
   weightB: number;
 }) {
@@ -205,36 +226,55 @@ function CombinationEquationWorkbench({
   const aSquaredTerm = contributionA ** 2;
   const bSquaredTerm = contributionB ** 2;
   const crossTerm = 2 * cA * cB * phiA * phiB;
+  const samePhase = phaseB === 1;
+  const equalWeights = Math.abs(weightB - weightA) < 0.05;
+  const crossOperator = crossTerm < 0 ? "−" : "+";
+  const crossMagnitude = Math.abs(crossTerm).toFixed(2);
   const modeCopy: Record<
     CombinationEquationMode,
-    { title: string; summary: string; answerLabel: string; answer: string; answerText: string }
+    {
+      title: string;
+      summary: string;
+      answerLabel: string;
+      answer: string;
+      answerText: string;
+      teaching: string;
+    }
   > = {
     mo: {
-      title: "MO value at the highlighted point",
+      title: "Build the MO value at one point",
       summary:
-        "This is the point-by-point addition rule. The app repeats this same addition at every point to draw the MO.",
+        "The marked point above is one location between two p orbitals. Multiply each starting orbital value by its weight, then add the signed contributions.",
       answerLabel: "Signed result",
       answer: `ψ = ${formatNumber(psi)}`,
       answerText:
         Math.abs(psi) < 0.005
           ? "The two contributions cancel at this point, so this point is on a node."
           : `${formatSignWord(psi)} ψ remains here, so this point keeps that phase in the resulting MO.`,
+      teaching:
+        samePhase
+          ? "Same-phase center lobes give two contributions with the same sign. This local addition is the arithmetic behind electron buildup in a bonding π MO."
+          : equalWeights
+            ? "Flipping B makes the two center contributions equal and opposite. At this point they cancel to zero, which is the local arithmetic behind a π* node."
+            : "Flipping B makes the center contributions oppose each other. Unequal weights keep the cancellation from landing exactly at this sampled point, but the MO still develops a node nearby.",
     },
     density: {
-      title: "Density after squaring the MO value",
+      title: "Square only after the orbitals combine",
       summary:
-        "Square the combined ψ value after addition. Squaring makes density nonnegative.",
+        "Electron density comes from the finished MO value. The app does not square A and B separately first; it adds amplitudes first, then squares the sum.",
       answerLabel: "Relative density",
       answer: `|ψ|² = ${density.toFixed(2)}`,
       answerText:
         density < 0.005
           ? "A zero wave amplitude gives zero density at the node."
           : "A larger combined amplitude gives a larger relative density after squaring.",
+      teaching:
+        "Phase signs disappear when a single number is squared, but they have already changed the sum. That is why opposite phase can produce zero density between atoms.",
     },
     cross: {
-      title: "Expanded density and the cross term",
+      title: "See the overlap term that builds or cancels",
       summary:
-        "The cross term is where phase shows up after squaring. It adds for matched signs and subtracts for opposite signs.",
+        "The expanded form shows the part of the density equation that contains both orbitals at once. That shared term is where relative phase matters.",
       answerLabel: "Cross term",
       answer: `2cAcBφAφB = ${formatNumber(crossTerm)}`,
       answerText:
@@ -243,19 +283,43 @@ function CombinationEquationWorkbench({
           : crossTerm < 0
             ? "The cross term is negative, so overlap cancels density at the node."
             : "The cross term is zero, so there is no overlap contribution from these values.",
+      teaching:
+        crossTerm > 0
+          ? "The overlap term is positive because the two sampled contributions have matching signs. In a C=C-like π bond, that positive shared term is the buildup between atoms."
+          : "The overlap term is negative because the two sampled contributions have opposite signs. That negative shared term is the cancellation that opens a node in π*.",
     },
   };
   const current = modeCopy[mode];
+  const stageNote =
+    stageId === "one-point"
+      ? "Lesson focus: one marked point. The equation buttons open the arithmetic happening at that dot before the app draws the larger orbital picture."
+      : stageId === "all-space"
+        ? "Lesson focus: every point. The equation still shows one sampled point, and the MO picture below repeats that same signed addition across the whole bond region."
+        : "Lesson focus: weights. The same point equation stays visible while cA and cB show how strongly each starting orbital contributes.";
+  const stageAwareTitle =
+    stageId === "all-space" && mode === "mo"
+      ? "Use one sampled point to build the whole MO"
+      : stageId === "weights" && mode === "mo"
+        ? "Weights scale each contribution before addition"
+        : current.title;
+  const stageAwareSummary =
+    stageId === "all-space" && mode === "mo"
+      ? "The marked dot is one sample from a wavefunction spread through space. A π or π* MO comes from adding φA and φB at many points across the whole bond region."
+      : stageId === "weights" && mode === "mo"
+        ? "The equation is still point-by-point addition. The weights decide how much of each starting orbital enters before the two signed values are added."
+        : current.summary;
 
   return (
-    <section className="combine-equation-workbench" aria-label="Interactive compact equation">
+    <section className="combine-equation-workbench" aria-label="Interactive molecular orbital equation">
       <div className="combine-equation-header">
         <div>
-          <span>Governing equation</span>
-          <h3>{current.title}</h3>
+          <span>Equation walkthrough</span>
+          <h3>{stageAwareTitle}</h3>
         </div>
-        <p>{current.summary}</p>
+        <p>{stageAwareSummary}</p>
       </div>
+
+      <p className="combine-equation-stage-note">{stageNote}</p>
 
       <div className="combine-equation-tabs" role="group" aria-label="Equation view">
         <button
@@ -263,7 +327,7 @@ function CombinationEquationWorkbench({
           className={mode === "mo" ? "is-active" : ""}
           onClick={() => setMode("mo")}
         >
-          1 Add ψ
+          1 Add amplitudes
         </button>
         <button
           type="button"
@@ -277,7 +341,7 @@ function CombinationEquationWorkbench({
           className={mode === "cross" ? "is-active" : ""}
           onClick={() => setMode("cross")}
         >
-          3 Cross term
+          3 See overlap
         </button>
       </div>
 
@@ -285,95 +349,216 @@ function CombinationEquationWorkbench({
         <div className="combine-equation-line" aria-label={current.title}>
           {mode === "mo" ? (
             <>
-              <CombinationEquationTerm
-                label="MO wavefunction"
-                value={`ψ = ${formatNumber(psi)}`}
-                description="The molecular orbital value at this point. It is a signed wave amplitude, not probability."
-              >
-                ψ
-              </CombinationEquationTerm>{" "}
-              ={" "}
-              <CombinationEquationTerm
-                label="weight on orbital A"
-                value={`cA = ${formatPlainNumber(cA)}`}
-                description="This multiplies the starting orbital on atom A before the values are added."
-              >
-                c<sub>A</sub>
-              </CombinationEquationTerm>
-              <CombinationEquationTerm
-                label="orbital A value"
-                value={`φA = ${formatNumber(phiA)}`}
-                description="The value of starting orbital A at the highlighted point."
-              >
-                φ<sub>A</sub>
-              </CombinationEquationTerm>{" "}
-              +{" "}
-              <CombinationEquationTerm
-                label="signed weight on orbital B"
-                value={`cB = ${formatNumber(cB)}`}
-                description="This is controlled by the flip button and the B-weight slider. A negative value means B has opposite phase at this point."
-              >
-                c<sub>B</sub>
-              </CombinationEquationTerm>
-              <CombinationEquationTerm
-                label="orbital B value"
-                value={`φB = ${formatNumber(phiB)}`}
-                description="The value of starting orbital B at the same highlighted point in space."
-              >
-                φ<sub>B</sub>
-              </CombinationEquationTerm>
+              <CombinationEquationRow label="Reference equation">
+                <CombinationEquationTerm
+                  label="MO wave amplitude"
+                  value={`ψ = ${formatNumber(psi)}`}
+                  description="This is the molecular-orbital wave amplitude at the selected point. You get it only after adding the two starting-orbital contributions. Its sign is phase, not charge."
+                  tone="result"
+                >
+                  ψ
+                </CombinationEquationTerm>{" "}
+                ={" "}
+                <CombinationEquationTerm
+                  label="weight on orbital A"
+                  value={`cA = ${formatPlainNumber(cA)}`}
+                  description="A weight says how much starting orbital A participates in this trial MO. Here cA is fixed at 1.00 because this step models an ethylene-like C=C bond with two equivalent carbon p orbitals. When the atoms are not the same, as in C=O, the weights become chemically important."
+                >
+                  c<sub>A</sub>
+                </CombinationEquationTerm>
+                <CombinationEquationTerm
+                  label="orbital A value"
+                  value={`φA = ${formatNumber(phiA)}`}
+                  description="φA is the signed value of the starting p orbital on atom A at this one point in space. The +0.60 is a fixed, scaled sample value chosen to make the arithmetic visible; it is not an experimental number from the chapter."
+                >
+                  φ<sub>A</sub>
+                </CombinationEquationTerm>{" "}
+                +{" "}
+                <CombinationEquationTerm
+                  label="signed weight on orbital B"
+                  value={`cB = ${formatNumber(cB)}`}
+                  description="This signed weight includes the selected relative phase for B. For the C=C reference, B has the same size weight as A; flipping B changes the sign only. In a heteroatom case, the size of cB can also change."
+                >
+                  c<sub>B</sub>
+                </CombinationEquationTerm>
+                <CombinationEquationTerm
+                  label="orbital B value"
+                  value={`φB = ${formatNumber(phiB)}`}
+                  description="φB is the value of starting orbital B at the same point in space. It starts with the same fixed +0.60 sample as φA because this step is the equal-carbon C=C reference; the sign change comes from the B weight when you flip phase."
+                >
+                  φ<sub>B</sub>
+                </CombinationEquationTerm>
+              </CombinationEquationRow>
+              <CombinationEquationRow label="Live substitution" live>
+                <CombinationEquationTerm
+                  label="current MO amplitude"
+                  value={`ψ = ${formatNumber(psi)}`}
+                  description="This is the new signed MO value at the point marked in the picture above."
+                  tone="result"
+                >
+                  ψ
+                </CombinationEquationTerm>{" "}
+                ={" "}
+                <CombinationEquationTerm
+                  label="A contribution"
+                  value={`cAφA = ${formatNumber(contributionA)}`}
+                  description="Orbital A contributes its fixed sampled value multiplied by its weight: 1.00 × 0.60. This is a teaching-scale amplitude at the circled point."
+                  tone="value"
+                >
+                  ({formatPlainNumber(cA)})({formatNumber(phiA)})
+                </CombinationEquationTerm>{" "}
+                +{" "}
+                <CombinationEquationTerm
+                  label="B contribution"
+                  value={`cBφB = ${formatNumber(contributionB)}`}
+                  description="Orbital B contributes the same fixed sampled value, multiplied by its signed weight. If B is flipped, the contribution becomes negative even though the sample magnitude is still 0.60."
+                  tone="value"
+                >
+                  ({formatNumber(cB)})({formatNumber(phiB)})
+                </CombinationEquationTerm>{" "}
+                ={" "}
+                <CombinationEquationTerm
+                  label="new MO value"
+                  value={`ψ = ${formatNumber(psi)}`}
+                  description="The result is still a wave amplitude. It becomes density only after the next step squares it."
+                  tone="result"
+                >
+                  {formatNumber(psi)}
+                </CombinationEquationTerm>
+              </CombinationEquationRow>
             </>
           ) : mode === "density" ? (
             <>
-              <CombinationEquationTerm
-                label="probability density"
-                value={`|ψ|² = ${density.toFixed(2)}`}
-                description="A relative density value at this point. It is never negative because ψ is squared."
-              >
-                |ψ|²
-              </CombinationEquationTerm>{" "}
-              ={" "}
-              <CombinationEquationTerm
-                label="combined wave amplitude"
-                value={`ψ = ${formatNumber(psi)}`}
-                description="Add the two signed orbital contributions first, then square the result."
-              >
-                (c<sub>A</sub>φ<sub>A</sub> + c<sub>B</sub>φ<sub>B</sub>)²
-              </CombinationEquationTerm>
+              <CombinationEquationRow label="Reference equation">
+                <CombinationEquationTerm
+                  label="relative density"
+                  value={`|ψ|² = ${density.toFixed(2)}`}
+                  description="This is the relative electron-density value from the finished MO at this point. It is a teaching-model density, not an experimental measurement."
+                  tone="result"
+                >
+                  |ψ|²
+                </CombinationEquationTerm>{" "}
+                ={" "}
+                <CombinationEquationTerm
+                  label="square of the combined amplitude"
+                  value={`ψ = ${formatNumber(psi)}`}
+                  description="The parentheses matter: add the two signed orbital contributions first, then square the combined ψ value."
+                >
+                  (c<sub>A</sub>φ<sub>A</sub> + c<sub>B</sub>φ<sub>B</sub>)²
+                </CombinationEquationTerm>
+              </CombinationEquationRow>
+              <CombinationEquationRow label="Live substitution" live>
+                <CombinationEquationTerm
+                  label="current relative density"
+                  value={`|ψ|² = ${density.toFixed(2)}`}
+                  description="This number tells where density is large or small in the simplified picture. It is always zero or positive."
+                  tone="result"
+                >
+                  |ψ|²
+                </CombinationEquationTerm>{" "}
+                ={" "}
+                <CombinationEquationTerm
+                  label="current combined amplitude"
+                  value={`ψ = ${formatNumber(psi)}`}
+                  description="This is the signed result from the previous tab. The sign is kept until this square is taken."
+                  tone="value"
+                >
+                  ({formatNumber(psi)})²
+                </CombinationEquationTerm>{" "}
+                ={" "}
+                <CombinationEquationTerm
+                  label="density answer"
+                  value={`|ψ|² = ${density.toFixed(2)}`}
+                  description="Squaring the final ψ value turns wave amplitude into relative density for this teaching model."
+                  tone="result"
+                >
+                  {density.toFixed(2)}
+                </CombinationEquationTerm>
+              </CombinationEquationRow>
             </>
           ) : (
             <>
-              <CombinationEquationTerm
-                label="expanded density"
-                value={`|ψ|² = ${density.toFixed(2)}`}
-                description="The same density equation, written out so you can see the individual A, B, and overlap pieces."
-              >
-                |ψ|²
-              </CombinationEquationTerm>{" "}
-              ={" "}
-              <CombinationEquationTerm
-                label="A-only density piece"
-                value={`cA²φA² = ${aSquaredTerm.toFixed(2)}`}
-                description="The density contribution from orbital A by itself."
-              >
-                c<sub>A</sub>²φ<sub>A</sub>²
-              </CombinationEquationTerm>{" "}
-              +{" "}
-              <CombinationEquationTerm
-                label="B-only density piece"
-                value={`cB²φB² = ${bSquaredTerm.toFixed(2)}`}
-                description="The density contribution from orbital B by itself. The sign disappears because this part is squared."
-              >
-                c<sub>B</sub>²φ<sub>B</sub>²
-              </CombinationEquationTerm>{" "}
-              +{" "}
-              <CombinationEquationTerm
-                label="cross term"
-                value={`2cAcBφAφB = ${formatNumber(crossTerm)}`}
-                description="This term contains both orbitals at once. It is positive for matched signs and negative for opposite signs."
-              >
-                2c<sub>A</sub>c<sub>B</sub>φ<sub>A</sub>φ<sub>B</sub>
-              </CombinationEquationTerm>
+              <CombinationEquationRow label="Reference equation">
+                <CombinationEquationTerm
+                  label="expanded density"
+                  value={`|ψ|² = ${density.toFixed(2)}`}
+                  description="This is the same density equation written open, so you can see the A-only piece, the B-only piece, and the shared overlap piece."
+                  tone="result"
+                >
+                  |ψ|²
+                </CombinationEquationTerm>{" "}
+                ={" "}
+                <CombinationEquationTerm
+                  label="A-only density piece"
+                  value={`cA²φA² = ${aSquaredTerm.toFixed(2)}`}
+                  description="This part comes from the A contribution alone. With the default C=C teaching sample, it is 0.60 squared, so it gives 0.36."
+                >
+                  c<sub>A</sub>²φ<sub>A</sub>²
+                </CombinationEquationTerm>{" "}
+                +{" "}
+                <CombinationEquationTerm
+                  label="B-only density piece"
+                  value={`cB²φB² = ${bSquaredTerm.toFixed(2)}`}
+                  description="This part comes from the B contribution alone. The sign disappears because this piece is squared, so +0.60 and −0.60 both give 0.36 before the overlap term is added."
+                >
+                  c<sub>B</sub>²φ<sub>B</sub>²
+                </CombinationEquationTerm>{" "}
+                +{" "}
+                <CombinationEquationTerm
+                  label="overlap cross term"
+                  value={`2cAcBφAφB = ${formatNumber(crossTerm)}`}
+                  description="This is the overlap term. It uses both fixed sample amplitudes at once, so it is the piece that knows whether A and B have the same or opposite phase. Positive builds density between atoms; negative cancels it."
+                  tone="overlap"
+                >
+                  2c<sub>A</sub>c<sub>B</sub>φ<sub>A</sub>φ<sub>B</sub>
+                </CombinationEquationTerm>
+              </CombinationEquationRow>
+              <CombinationEquationRow label="Live substitution" live>
+                <CombinationEquationTerm
+                  label="current relative density"
+                  value={`|ψ|² = ${density.toFixed(2)}`}
+                  description="This answer matches the square of the combined ψ value from the previous tab."
+                  tone="result"
+                >
+                  |ψ|²
+                </CombinationEquationTerm>{" "}
+                ={" "}
+                <CombinationEquationTerm
+                  label="current A-only piece"
+                  value={`cA²φA² = ${aSquaredTerm.toFixed(2)}`}
+                  description="The A-only piece is the squared A contribution from the fixed 0.60 sample at this point."
+                  tone="value"
+                >
+                  {aSquaredTerm.toFixed(2)}
+                </CombinationEquationTerm>{" "}
+                +{" "}
+                <CombinationEquationTerm
+                  label="current B-only piece"
+                  value={`cB²φB² = ${bSquaredTerm.toFixed(2)}`}
+                  description="The B-only piece is also positive because it is squared, even when B has opposite phase. That is why the overlap term is needed to show bonding versus antibonding."
+                  tone="value"
+                >
+                  {bSquaredTerm.toFixed(2)}
+                </CombinationEquationTerm>{" "}
+                {crossOperator}{" "}
+                <CombinationEquationTerm
+                  label="current overlap piece"
+                  value={`cross term = ${formatNumber(crossTerm)}`}
+                  description="The sign on this overlap piece changes when B flips. In this equal C=C sample the size is fixed; later, when atoms differ, the weights change the size too."
+                  tone="overlap"
+                >
+                  {crossMagnitude}
+                </CombinationEquationTerm>{" "}
+                ={" "}
+                <CombinationEquationTerm
+                  label="expanded density answer"
+                  value={`|ψ|² = ${density.toFixed(2)}`}
+                  description="The expanded pieces add to the same density you get by squaring the final ψ value."
+                  tone="result"
+                >
+                  {density.toFixed(2)}
+                </CombinationEquationTerm>
+              </CombinationEquationRow>
             </>
           )}
         </div>
@@ -384,7 +569,9 @@ function CombinationEquationWorkbench({
           <p>{current.answerText}</p>
         </div>
 
-        <div className="combine-equation-substitution" aria-label="Live substitution values">
+        <p className="combine-equation-teaching">{current.teaching}</p>
+
+        <div className="combine-equation-substitution" aria-label="Values at the selected point">
           <span>cA = {formatPlainNumber(cA)}</span>
           <span>φA = {formatNumber(phiA)}</span>
           <span>cB = {formatNumber(cB)}</span>
@@ -404,8 +591,10 @@ function CombinationEquationWorkbench({
       </div>
 
       <p className="combine-equation-note">
-        These are scaled teaching values at the highlighted point. The full MO
-        picture repeats the same equation across space.
+        The default +0.60 values are fixed, scaled teaching samples for the
+        selected point in an equal-carbon C=C reference. They are not
+        experimental values. The full MO picture repeats this same weighted
+        addition across space.
       </p>
     </section>
   );
@@ -433,7 +622,7 @@ function FacingLobes({ phaseB }: { phaseB: Phase }) {
         className="wave-frame"
       />
       <text x="34" y="42" className="wave-panel-title">
-        Put two pᵧ orbitals together and look at the shared point
+        π bond
       </text>
       <text x="726" y="42" textAnchor="end" className="combine-py-note">
         {samePhase ? "center lobes: + and +" : "center lobes: + and −"}
@@ -931,20 +1120,31 @@ export function CombinationLesson(props: LessonComponentProps) {
   const equalWeights = Math.abs(weightB - weightA) < 0.05;
   const strongerAtom = weightB > weightA ? "B" : "A";
   const weakerAtom = strongerAtom === "A" ? "B" : "A";
+  const weightContext = equalWeights
+    ? "Equal weights are the equal-energy reference: two equivalent p orbitals, as in the C=C pi system of ethylene."
+    : `Unequal weights mean this trial MO has more atom ${strongerAtom} character. In a real heteroatom case, unequal starting orbital energies decide the weights: a carbonyl bonding pi MO is more oxygen-like, while pi* is more carbon-like.`;
   const feedback =
     phaseB === -1
       ? equalWeights
         ? "Equal opposite amplitudes cancel at the midpoint. Repeating the cancellation through space creates a nodal surface, where |ψ|² is zero."
-        : `Opposite amplitudes still create a nodal surface, but unequal weights move it toward atom ${weakerAtom}, the weaker contribution.`
+        : `Opposite amplitudes still create a nodal surface, but unequal weights move it toward atom ${weakerAtom}, the weaker contribution. The larger weight tells which starting orbital contributes more to this MO.`
       : equalWeights
-        ? "Matching amplitudes reinforce and join across the atoms. Squaring the combined ψ gives electron-density buildup in the overlap region."
-        : `Matching amplitudes still reinforce, while the larger coefficient shifts ψ and the qualitative |ψ|² distribution toward atom ${strongerAtom}.`;
+        ? "Matching amplitudes reinforce and join across the atoms. This equal-weight case is the symmetric reference for equivalent starting orbitals."
+        : `Matching amplitudes still reinforce, while the larger weight shifts ψ and the qualitative |ψ|² distribution toward atom ${strongerAtom}.`;
+  const phaseChoiceConsequence =
+    phaseB === 1
+      ? "Matched center-facing lobes are in phase, so the two p orbitals reinforce between the atoms. This is the bonding π MO; with two π electrons in it, ethylene has a π bond."
+      : "Flipped B makes the center-facing lobes out of phase, so the values cancel between the atoms. This is the antibonding π* MO; its node removes electron density from the bond region.";
+  const pointArithmeticExplanation =
+    phaseB === 1
+      ? "At the circled point, orbital A contributes +0.60 and orbital B contributes +0.60, so the new MO value is +1.20. The 0.60 is a fixed, scaled teaching value chosen for this sampled point, not experimental data. The app then repeats that same addition at many points to draw the whole π bonding orbital. Where the sum is large, squaring ψ gives electron density in the bond region."
+      : "At the circled point, orbital A contributes +0.60 and orbital B contributes −0.60, so the new MO value is 0.00. The 0.60 is a fixed, scaled teaching value chosen for this sampled point, not experimental data. A zero in the middle is a node: this point has no electron density from that MO after squaring. Repeating the same cancellation across space draws the π* antibonding node.";
 
   return (
     <LessonShell
       meta={props.meta}
-      purpose="Build a molecular orbital by adding signed orbital values, first at one point and then throughout space."
-      question="How can ordinary addition create either electron buildup or a node between two atoms?"
+      purpose="Use the π part of a C=C bond as the concrete example: two neighboring p orbitals combine to make a bonding π MO or an antibonding π* MO."
+      question="For the π part of a C=C or C=O bond, why does same-phase overlap build electron density while opposite-phase overlap creates a node?"
       feedback={feedback}
       showLearningCycle={false}
       onPrevious={previous}
@@ -982,16 +1182,41 @@ export function CombinationLesson(props: LessonComponentProps) {
               </p>
               <h2 id="combination-stage-title">{stage.title}</h2>
               <p className="guided-lead">{stage.lead}</p>
+              {stage.id === "one-point" ? (
+                <p className="control-context">
+                  Chemistry translation: this is not the whole double bond. It
+                  is the side-by-side p-orbital piece. Same-phase addition gives
+                  the bonding π MO; when electrons occupy that MO, it is the
+                  π-bond part of the double bond. Opposite-phase addition gives
+                  π* with a node between the atoms, so electrons in that orbital
+                  would oppose π bonding instead of strengthening it.
+                </p>
+              ) : null}
+              {stage.id === "all-space" ? (
+                <p className="control-context">
+                  For a π bonding orbital, matching phase between the nuclei
+                  makes the wavefunction values reinforce, so electron density
+                  builds between the atoms. For a π* antibonding orbital, one p
+                  orbital is flipped, the values cancel between the nuclei, and
+                  that cancellation creates the node that marks antibonding.
+                </p>
+              ) : null}
               <p className="control-context">
-                This is relative phase. The question is not which color is
-                “really” positive. The question is whether the two values at the
-                same location have matching or opposite signs.
+                The colors only mark relative phase. They are arbitrary labels,
+                not charge. The important point is whether the two orbital
+                values at the same place have matching or opposite signs.
               </p>
               {stage.id === "weights" ? (
                 <p className="control-context">
-                  A weight multiplies wave amplitude, not probability. The
-                  amplitudes combine first; then the app squares the resulting ψ
-                  to show the qualitative |ψ|² distribution.
+                  This slider is a coefficient-size model, not an atom picker.
+                  It asks what happens after one starting orbital has been given
+                  a larger or smaller weight. Later lessons explain why real
+                  molecules get unequal weights.
+                </p>
+              ) : null}
+              {stage.id === "weights" ? (
+                <p className="control-context">
+                  {weightContext}
                 </p>
               ) : null}
             </div>
@@ -1028,12 +1253,15 @@ export function CombinationLesson(props: LessonComponentProps) {
                     flip B: blue + meets orange −
                   </button>
                 </div>
+                <p className="choice-panel__consequence">
+                  {phaseChoiceConsequence}
+                </p>
               </div>
 
               {stage.id === "weights" ? (
                 <div className="weight-panel">
                   <label htmlFor="weight-b">
-                    <span>Contribution from orbital B, relative to A = 1.00</span>
+                    <span>B weight cB, with A fixed at cA = 1.00</span>
                     <strong>{weightB.toFixed(2)}</strong>
                   </label>
                   <input
@@ -1056,6 +1284,12 @@ export function CombinationLesson(props: LessonComponentProps) {
                       Mostly B
                     </button>
                   </div>
+                  <p className="weight-panel__note">
+                    Equal means the two starting orbitals contribute equally.
+                    Mostly A or mostly B means this MO is polarized toward that
+                    side. For a carbonyl-like π system, oxygen contributes more
+                    to the bonding π MO, while carbon contributes more to π*.
+                  </p>
                 </div>
               ) : null}
             </div>
@@ -1069,14 +1303,19 @@ export function CombinationLesson(props: LessonComponentProps) {
               phaseB={phaseB}
             />
 
+            <div className="combination-equation-focus">
+              <CombinationEquationWorkbench
+                phaseB={phaseB}
+                stageId={stage.id}
+                weightA={weightA}
+                weightB={weightB}
+              />
+            </div>
+
             {stage.id === "one-point" ? (
               <aside className="concept-correction concept-correction--visual">
                 <strong>Do this calculation at one point first</strong>
-                <p>
-                  A molecular orbital equation is point-by-point arithmetic. The
-                  pictures become meaningful only after the signed numbers are
-                  clear.
-                </p>
+                <p>{pointArithmeticExplanation}</p>
               </aside>
             ) : (
               <div className="combination-diagram-wrap">
@@ -1113,15 +1352,6 @@ export function CombinationLesson(props: LessonComponentProps) {
           </button>
         </div>
       </section>
-
-      <details className="going-deeper">
-        <summary>Going deeper: the compact equation</summary>
-        <CombinationEquationWorkbench
-          phaseB={phaseB}
-          weightA={weightA}
-          weightB={weightB}
-        />
-      </details>
     </LessonShell>
   );
 }
