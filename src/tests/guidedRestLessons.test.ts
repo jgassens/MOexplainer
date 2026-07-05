@@ -40,15 +40,19 @@ describe('guided rest lesson integration', () => {
     expect(lesson.stages.map((stage) => stage.id)).toEqual(['in-phase', 'out-of-phase', 'energy-pair']);
     expect(lesson.stages[0]?.lead).toContain('In the last lesson');
     expect(lesson.stages[0]?.lead).toContain('C=C π bond');
-    expect(lesson.stages[0]?.lead).toContain('equivalent neighboring carbon p orbitals');
+    expect(lesson.stages[0]?.lead).toContain('equivalent neighboring carbon p atomic orbitals');
     expect(lesson.stages[0]?.lead).not.toContain('chapter');
     expect(lesson.stages[0]?.lead).toContain('two molecular orbitals');
     expect(lesson.stages[0]?.lead).toContain('bonding π combination');
-    expect(lesson.stages[0]?.equation).toContain('ψ+ = φA + φB');
+    expect(lesson.stages[0]?.lead).toContain('ψ+ = N(φA + φB)');
+    expect(lesson.stages[0]?.lead).toContain('ψ− = N(φA − φB)');
+    expect(lesson.stages[0]?.equation).toContain('ψ+ = N(φA + φB)');
     expect(lesson.stages[1]?.equation).toContain('|0|²');
-    expect(lesson.stages[2]?.equation).toContain('2 AOs -> ψ+ lower + ψ− higher');
-    expect(lesson.stages[2]?.lead).toContain('not changing the bond length');
-    expect(lesson.stages[2]?.lead).toContain('not making the orbital cloud physically expand');
+    expect(lesson.stages[1]?.lead).toContain('starting functions, φA and φB');
+    expect(lesson.stages[2]?.equation).toContain('overlap S ≈ cos(θ)');
+    expect(lesson.stages[2]?.lead).toContain('Twisting changes overlap, not the relative-phase rule');
+    expect(lesson.stages[2]?.lead).toContain('At 90° twist, π overlap is essentially zero');
+    expect(lesson.stages[2]?.correction).toContain('Do not attribute π* to twisting');
     expect(lesson.endItems.some((item) => item.id === 'bond-transfer-short')).toBe(true);
   });
 
@@ -62,8 +66,12 @@ describe('guided rest lesson integration', () => {
     const source = readFileSync(resolve(process.cwd(), 'src/lessons/GuidedOrbitalLesson.tsx'), 'utf8');
     expect(source).toContain('BondingEquationChooser');
     expect(source).toContain('Review Lesson 2');
-    expect(source).toContain('Two resulting MOs');
-    expect(source).toContain('well-aligned neighboring p orbitals');
+    expect(source).toContain('ψ+ = N(φA + φB)');
+    expect(source).toContain('ψ− = N(φA − φB)');
+    expect(source).toContain('p-orbital twist angle / π overlap');
+    expect(source).toContain('relative overlap S ≈ cos');
+    expect(source).toContain('Twisting the p orbitals changes overlap, not phase');
+    expect(source).not.toContain('add ψ values');
   });
 });
 

@@ -132,58 +132,110 @@ function BondingEquationChooser({ state, setState }: { state: ControlState; setS
     <div className="guided-equation-strip guided-equation-strip--interactive" aria-label="Choose the molecular orbital equation to inspect">
       <div className="guided-equation-options">
         <button type="button" className={bonding ? 'is-active' : ''} onClick={() => setState({ phase: 'bonding' })}>
-          ψ+ = φA + φB
+          ψ+ = N(φA + φB)
         </button>
         <button type="button" className={!bonding ? 'is-active' : ''} onClick={() => setState({ phase: 'antibonding' })}>
-          ψ− = φA − φB
+          ψ− = N(φA − φB)
         </button>
       </div>
       <p>
-        This equation choice controls the bond-center arithmetic, the highlighted MO row, and the selected energy level below.
+        Two p atomic orbitals are the starting functions, φA and φB. A molecular orbital is made by adding or subtracting their signed amplitudes at every point in space. The in-phase combination, ψ+ = N(φA + φB), builds amplitude between the nuclei and gives a π bonding MO. The out-of-phase combination, ψ− = N(φA − φB), cancels between the nuclei and gives a node, producing a π* antibonding MO. The colors only mark relative phase; the absolute choice of color is arbitrary.
       </p>
     </div>
   );
 }
 
+function RotatingPiLobes({
+  angle,
+  scale = 1,
+  signs,
+  x,
+  y,
+}: {
+  angle: number;
+  scale?: number;
+  signs: [1 | -1, 1 | -1];
+  x: number;
+  y: number;
+}) {
+  return (
+    <g transform={`translate(${x} ${y}) rotate(${angle})`}>
+      <PiLobes x={0} y={0} signs={signs} scale={scale} />
+    </g>
+  );
+}
+
+function overlapLabelFor(overlap: number): string {
+  if (overlap < 0.06) return 'zero';
+  if (overlap < 0.34) return 'low';
+  if (overlap < 0.72) return 'medium';
+  return 'high';
+}
+
 function BondingVisual({ state, setState, onReviewPrevious }: { state: ControlState; setState: SetControlState; onReviewPrevious: () => void }) {
   const bonding = state.phase === 'bonding';
-  const centerA = 0.6;
-  const centerB = bonding ? 0.6 : -0.6;
+  const twistDegrees = state.twist;
+  const overlap = clamp(Math.cos((twistDegrees * Math.PI) / 180), 0, 1);
+  const overlapLabel = overlapLabelFor(overlap);
+  const sampleMagnitude = 0.6 * overlap;
+  const centerA = sampleMagnitude;
+  const centerB = bonding ? sampleMagnitude : -sampleMagnitude;
   const centerPsi = centerA + centerB;
   const centerDensity = centerPsi ** 2;
-  const lowerShift = -0.72 * state.interaction;
-  const upperShift = 1.08 * state.interaction;
+  const lowerShift = -0.72 * overlap;
+  const upperShift = 1.08 * overlap;
   const energySplit = upperShift - lowerShift;
   const netEnergy = 2 * lowerShift + (state.bondingElectrons === 4 ? 2 * upperShift : 0);
-  const energyLabel = netEnergy < 0 ? 'net stabilizing' : 'net destabilizing';
+  const energyLabel = Math.abs(netEnergy) < 0.01 ? 'no net π bonding' : netEnergy < 0 ? 'net stabilizing' : 'net destabilizing';
   const energyCopy =
-    state.bondingElectrons === 2
-      ? 'Both MOs exist. Two electrons fill only ψ+, so the filled bonding level makes the interaction stabilizing.'
-      : 'Both MOs exist and both are filled. The ψ− antibonding penalty is larger, so the filled-filled interaction is repulsive.';
-  const lowerY = 250 - lowerShift * 62;
-  const upperY = 170 - upperShift * 62;
-  const interactionFraction = clamp((state.interaction - 0.18) / (0.95 - 0.18), 0, 1);
-  const bridgeOpacity = 0.18 + interactionFraction * 0.35;
-  const nodeOpacity = 0.48 + interactionFraction * 0.32;
-  const interactionFill = interactionFraction * 100;
+    overlap < 0.06
+      ? 'At this twist the π overlap is essentially zero, so ψ+ and ψ− are nearly degenerate and there is little π bonding benefit to occupy.'
+      : state.bondingElectrons === 2
+        ? 'Both MOs exist. Two electrons fill only ψ+, so the filled bonding level makes the interaction stabilizing.'
+        : 'Both MOs exist and both are filled. The ψ− antibonding penalty removes the bonding benefit and is net destabilizing in this teaching model.';
+  const lowerY = 230 + 42 * overlap;
+  const upperY = 230 - 42 * overlap;
+  const lowerYMobile = 758 + 34 * overlap;
+  const upperYMobile = 758 - 34 * overlap;
+  const bridgeOpacity = overlap < 0.06 ? 0.03 : 0.16 + overlap * 0.42;
+  const nodeOpacity = overlap < 0.06 ? 0.14 : 0.44 + overlap * 0.34;
+  const overlapMeter = overlap * 100;
   const reviewPreviousLesson = (event: MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
     onReviewPrevious();
   };
+  const activeMoLabel = bonding ? 'ψ+ π bonding' : 'ψ− π* antibonding';
+  const sampleEquationLabel = bonding ? 'ψ+(sample) = N[φA + φB]' : 'ψ−(sample) = N[φA − φB]';
+  const centerBLabel = bonding ? 'φB(sample)' : '−φB(sample)';
+  const densityCopy =
+    overlap < 0.06
+      ? 'At 90° twist, there is essentially no shared π-overlap sample to square.'
+      : bonding
+        ? 'density builds in the bonding region'
+        : 'a node forms between the nuclei';
   return (
     <div className="guided-visual-block">
       <div className="guided-control-row bonding-control-row" aria-label="Bonding and antibonding controls">
         <div className="bonding-control-group">
           <span className="bonding-control-heading">Combination to inspect</span>
           <div className="bonding-button-group">
-            <button type="button" className={bonding ? 'is-active' : ''} onClick={() => setState({ phase: 'bonding' })}>show ψ+ bonding</button>
-            <button type="button" className={!bonding ? 'is-active' : ''} onClick={() => setState({ phase: 'antibonding' })}>show ψ− antibonding</button>
+            <button type="button" className={bonding ? 'is-active' : ''} onClick={() => setState({ phase: 'bonding' })}>show ψ+ π bonding</button>
+            <button type="button" className={!bonding ? 'is-active' : ''} onClick={() => setState({ phase: 'antibonding' })}>show ψ− π* antibonding</button>
           </div>
         </div>
         <label className="bonding-slider-control">
-          <span>interaction strength <strong>{state.interaction.toFixed(2)}</strong></span>
-          <input type="range" min="0.18" max="0.95" step="0.01" value={state.interaction} onChange={(event) => setState({ interaction: Number(event.currentTarget.value) })} />
-          <em className="bonding-slider-note">This slider is the input: the teaching-model interaction strength. Strong means well-aligned neighboring p orbitals in a planar C=C π bond; weak means poor overlap, such as p orbitals twisted toward perpendicular. It does not change bond length or orbital-cloud size.</em>
+          <span>p-orbital twist angle / π overlap <strong>{twistDegrees.toFixed(0)}°</strong></span>
+          <input
+            type="range"
+            min="0"
+            max="90"
+            step="1"
+            value={twistDegrees}
+            aria-label="p-orbital twist angle / pi overlap"
+            onChange={(event) => setState({ twist: Number(event.currentTarget.value) })}
+          />
+          <strong className="bonding-slider-value">relative overlap S ≈ cos({twistDegrees.toFixed(0)}°) = {overlap.toFixed(2)}; energy split ∝ |S|</strong>
+          <em className="bonding-slider-note">Twisting the p orbitals changes overlap, not phase. Parallel p orbitals have maximum π overlap. As the orbitals twist toward perpendicular, overlap decreases and the ψ+/ψ− energy split shrinks.</em>
         </label>
         <div className="bonding-control-group">
           <span className="bonding-control-heading">Electron count</span>
@@ -196,158 +248,165 @@ function BondingVisual({ state, setState, onReviewPrevious }: { state: ControlSt
 
       <div className="bonding-readout-grid" aria-label="Bonding and antibonding orbital mixing readouts">
         <div className="bonding-readout-card">
-          <span>Fixed bond-center sample</span>
+          <span>Pointwise AO amplitudes</span>
           <strong>{signedDecimal(centerA)} + {signedDecimal(centerB)} = {signedDecimal(centerPsi)}</strong>
-          {bonding ? (
-            <p>
-              This is the equal-weight C=C case from Lesson 2: two identical carbon atoms contribute equal p-orbital samples.{' '}
-              <a href="#lesson-2-combine-values" onClick={reviewPreviousLesson}>Review Lesson 2.</a>
-            </p>
-          ) : (
-            <p>
-              The same C=C sample cancels when φB is given the opposite sign.{' '}
-              <a href="#lesson-2-combine-values" onClick={reviewPreviousLesson}>Review Lesson 2.</a>
-            </p>
-          )}
+          <p>
+            At this marked point, the MO amplitude is calculated from the signed AO amplitudes. For ψ+, add φA and φB. For ψ−, subtract them. After the MO amplitude is formed, square it to get electron density.{' '}
+            <a href="#lesson-2-combine-values" onClick={reviewPreviousLesson}>Review Lesson 2.</a>
+          </p>
         </div>
         <div className="bonding-readout-card">
-          <span>Then square ψ to see density</span>
+          <span>From one point to the whole orbital</span>
           <strong>|ψ|² = {centerDensity.toFixed(2)}</strong>
-          <p>{bonding ? 'Density builds in the bonding region.' : 'Zero density at the center marks a node.'}</p>
+          <p>The sample point shows the local arithmetic. The real MO is obtained by doing the same signed combination at every point in space. If the signs reinforce throughout the bond region, electron density connects the atoms. If the signs cancel between the atoms, a node separates the lobes.</p>
         </div>
         <div className="bonding-readout-card">
-          <span>Slider input to energy split</span>
-          <strong>energy split = {energySplit.toFixed(2)} teaching units</strong>
-          <p>The interaction value is the cause. A larger input separates ψ+ and ψ− more after the sign pattern is chosen.</p>
+          <span>Twist changes overlap, not the phase rule</span>
+          <strong>twist = {twistDegrees.toFixed(0)}°; S ≈ {overlap.toFixed(2)}</strong>
+          <p>Parallel p orbitals have strong π overlap. Twisting one p orbital toward perpendicular reduces overlap and shrinks the ψ+/ψ− energy gap. At 90°, the π overlap is essentially zero. The bonding vs antibonding distinction still comes from the + or − linear combination.</p>
         </div>
         <div className={`bonding-readout-card ${netEnergy > 0 ? 'is-destabilizing' : 'is-stabilizing'}`}>
           <span>Electron occupancy decides the consequence</span>
-          <strong>{energyLabel}: {signedDecimal(netEnergy)} teaching units</strong>
+          <strong>{energyLabel}: {signedDecimal(netEnergy)} arbitrary relative energy units</strong>
           <p>{energyCopy}</p>
         </div>
       </div>
 
-      <svg className="guided-main-svg bonding-mixing-svg bonding-mixing-svg--desktop" viewBox="0 0 920 450" role="img" aria-label="Orbital mixing workbench showing signed addition, density, node, and bonding-antibonding energy pair">
+      <svg className="guided-main-svg bonding-mixing-svg bonding-mixing-svg--desktop" viewBox="0 0 940 520" role="img" aria-label="Orbital mixing workbench showing twisted p atomic orbitals, pointwise signed amplitudes, and the pi/pi star energy pair">
         <defs>
           <marker id="bonding-arrowhead" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth">
             <path d="M 0 0 L 10 5 L 0 10 z" fill="#8c8175" />
           </marker>
         </defs>
-        <text className="guided-panel-title" x="28" y="34">Two starting orbitals make two molecular orbitals</text>
-        <text className="guided-svg-label" x="28" y="58">The selected combination is {bonding ? 'ψ+ = φA + φB, the lower bonding MO.' : 'ψ− = φA − φB, the higher antibonding MO with a node.'}</text>
+        <text className="guided-panel-title" x="28" y="34">Relative phase chooses ψ+ or ψ−; twist controls overlap and energy splitting</text>
+        <text className="guided-svg-label" x="28" y="58">Selected combination: {activeMoLabel}. Twist stays {twistDegrees.toFixed(0)}° when you switch phase.</text>
 
-        <rect className="bonding-panel-bg" x="28" y="82" width="285" height="318" rx="18" />
-        <text className="guided-panel-title guided-panel-title--small" x="50" y="118">1. Start with two p orbitals</text>
-        <PiLobes x={125} y={230} signs={[1, -1]} scale={0.9} />
-        <PiLobes x={230} y={230} signs={bonding ? [1, -1] : [-1, 1]} scale={0.9} />
-        <text className="guided-svg-label" x="104" y="326">φA</text>
-        <text className="guided-svg-label" x="212" y="326">{bonding ? 'φB' : '−φB'}</text>
-        <line className="guided-bond-axis" x1="92" x2="263" y1="230" y2="230" />
-        <circle className="bonding-center-probe" cx="178" cy="230" r="12" />
-        <text className="guided-svg-label" x="84" y="365">read the signs where the orbitals meet</text>
+        <rect className="bonding-panel-bg" x="24" y="82" width="280" height="392" rx="18" />
+        <text className="guided-panel-title guided-panel-title--small" x="44" y="116">1. Starting AOs and twist</text>
+        <text className="guided-svg-label" x="44" y="140">φA fixed; φB rotates</text>
+        <line className="guided-bond-axis" x1="78" x2="252" y1="248" y2="248" />
+        <circle className="bonding-center-probe" cx="165" cy="248" r="11" />
+        <PiLobes x={106} y={248} signs={[1, -1]} scale={0.86} />
+        <RotatingPiLobes x={224} y={248} signs={[1, -1]} scale={0.86} angle={twistDegrees} />
+        <path className="bonding-rotation-arc" d="M 205 171 A 84 84 0 0 1 280 248" />
+        <text className="guided-svg-label" x="75" y="354">φA</text>
+        <text className="guided-svg-label" x="205" y="354">φB</text>
+        <text className="bonding-result-label" x="44" y="386">π overlap {overlapLabel}</text>
+        <text className="guided-svg-label" x="44" y="410">twist angle = {twistDegrees.toFixed(0)}°</text>
+        <text className="guided-svg-label" x="44" y="432">relative overlap S ≈ cos({twistDegrees.toFixed(0)}°) = {overlap.toFixed(2)}</text>
+        <rect className="guided-meter-bg" x="44" y="444" width="214" height="14" rx="7" />
+        <rect className="guided-meter-fill" x="44" y="444" width={Math.max(0, overlapMeter * 2.14)} height="14" rx="7" />
 
-        <path className="bonding-flow-arrow" d="M 330 230 C 358 230, 378 230, 406 230" />
-        <text className="guided-svg-label" x="338" y="207">add ψ values</text>
+        <path className="bonding-flow-arrow" d="M 314 248 C 328 248, 338 248, 352 248" />
+        <text className="guided-svg-label" x="313" y="225">sample φ values</text>
 
-        <rect className="bonding-panel-bg" x="422" y="82" width="215" height="318" rx="18" />
-        <text className="guided-panel-title guided-panel-title--small" x="444" y="118">2. Two resulting MOs</text>
-        <text className="guided-svg-label" x="444" y="142">same pair makes both</text>
+        <rect className="bonding-panel-bg" x="362" y="82" width="252" height="392" rx="18" />
+        <text className="guided-panel-title guided-panel-title--small" x="382" y="116">2. Signed amplitude at one point</text>
+        <text className="guided-svg-label" x="382" y="145">{sampleEquationLabel}</text>
+        <text className="bonding-sample-line" x="382" y="186">φA(sample) = {signedDecimal(centerA)}</text>
+        <text className="bonding-sample-line" x="382" y="216">{centerBLabel} = {signedDecimal(centerB)}</text>
+        <text className="bonding-sample-line bonding-sample-line--result" x="382" y="262">{signedDecimal(centerA)} + {signedDecimal(centerB)} = {signedDecimal(centerPsi)}</text>
+        <text className="bonding-sample-line" x="382" y="300">density = |ψ|² = {centerDensity.toFixed(2)}</text>
+        <text className="guided-svg-label" x="382" y="336">{densityCopy}</text>
+        <text className="guided-svg-label" x="382" y="386">This is one marked point only.</text>
+        <text className="guided-svg-label" x="382" y="410">The full MO repeats the same signed</text>
+        <text className="guided-svg-label" x="382" y="432">combination throughout space.</text>
+
+        <path className="bonding-flow-arrow" d="M 624 248 C 638 248, 648 248, 662 248" />
+        <text className="guided-svg-label" x="623" y="225">form both MOs</text>
+
+        <rect className="bonding-panel-bg" x="672" y="82" width="244" height="392" rx="18" />
+        <text className="guided-panel-title guided-panel-title--small" x="692" y="116">3. Two MOs and energy splitting</text>
+        <text className="guided-svg-label" x="692" y="140">splitting ∝ |S| = {overlap.toFixed(2)}</text>
         <g>
-          <rect className={`bonding-mo-row-bg ${bonding ? 'is-selected' : ''}`} x="438" y="154" width="183" height="90" rx="14" />
-          <text className="bonding-result-label" x="452" y="174">ψ+ bonding</text>
-          <ellipse className="guided-density-bridge" cx="529" cy="205" rx="74" ry="31" style={{ opacity: bridgeOpacity }} />
-          <line className="guided-bond-axis" x1="462" x2="596" y1="205" y2="205" />
-          <PiLobes x={490} y={205} signs={[1, -1]} scale={0.48} />
-          <PiLobes x={568} y={205} signs={[1, -1]} scale={0.48} />
-          <text className="guided-svg-label" x="455" y="234">same signs add density</text>
+          <rect className={`bonding-mo-row-bg ${bonding ? 'is-selected' : ''}`} x="690" y="158" width="118" height="92" rx="14" />
+          <text className="bonding-result-label" x="704" y="180">ψ+ π</text>
+          <ellipse className="guided-density-bridge" cx="750" cy="215" rx="44" ry="22" style={{ opacity: bridgeOpacity }} />
+          <line className="guided-bond-axis" x1="710" x2="790" y1="215" y2="215" />
+          <PiLobes x={726} y={215} signs={[1, -1]} scale={0.32} />
+          <PiLobes x={775} y={215} signs={[1, -1]} scale={0.32} />
         </g>
         <g>
-          <rect className={`bonding-mo-row-bg ${!bonding ? 'is-selected' : ''}`} x="438" y="266" width="183" height="98" rx="14" />
-          <text className="bonding-result-label" x="452" y="286">ψ− antibonding</text>
-          <line className="guided-bond-axis" x1="462" x2="596" y1="319" y2="319" />
-          <PiLobes x={490} y={319} signs={[1, -1]} scale={0.48} />
-          <PiLobes x={568} y={319} signs={[-1, 1]} scale={0.48} />
-          <rect className="guided-node-band" x="523" y="284" width="12" height="70" rx="6" style={{ opacity: nodeOpacity }} />
-          <text className="guided-svg-label" x="455" y="354">opposite signs make a node</text>
+          <rect className={`bonding-mo-row-bg ${!bonding ? 'is-selected' : ''}`} x="690" y="264" width="118" height="98" rx="14" />
+          <text className="bonding-result-label" x="704" y="286">ψ− π*</text>
+          <line className="guided-bond-axis" x1="710" x2="790" y1="322" y2="322" />
+          <PiLobes x={726} y={322} signs={[1, -1]} scale={0.32} />
+          <PiLobes x={775} y={322} signs={[-1, 1]} scale={0.32} />
+          <rect className="guided-node-band" x="746" y="292" width="10" height="62" rx="5" style={{ opacity: nodeOpacity }} />
         </g>
-
-        <path className="bonding-flow-arrow" d="M 650 230 C 674 230, 690 230, 710 230" />
-        <text className="guided-svg-label" x="666" y="207">occupy levels</text>
-
-        <rect className="bonding-panel-bg" x="718" y="82" width="174" height="318" rx="18" />
-        <text className="guided-panel-title guided-panel-title--small" x="740" y="118">3. Energy pair</text>
-        <line className="guided-energy-axis" x1="740" x2="740" y1="145" y2="338" />
-        <text className="guided-svg-label" x="726" y="137">energy</text>
-        <line className="bonding-starting-level" x1="754" x2="802" y1="226" y2="226" />
-        <text className="guided-svg-label" x="756" y="218">φA, φB</text>
-        <line className="guided-mixing-line" x1="802" x2="844" y1="226" y2={upperY} />
-        <line className="guided-mixing-line" x1="802" x2="844" y1="226" y2={lowerY} />
-        <rect className="bonding-selected-energy" x="806" y={(bonding ? lowerY : upperY) - 18} width="68" height="28" rx="14" />
-        <EnergyLevel x1={812} x2={862} y={upperY} label="ψ−" occupied={state.bondingElectrons === 4} />
-        <EnergyLevel x1={812} x2={862} y={lowerY} label="ψ+" occupied />
-        <text className="guided-svg-label" x="740" y="350">slider input</text>
-        <rect className="guided-meter-bg" x="740" y="360" width="116" height="14" rx="7" />
-        <rect className="guided-meter-fill" x="740" y="360" width={Math.max(6, interactionFill * 1.16)} height="14" rx="7" />
-        <text className="guided-svg-label" x="740" y="393">{state.bondingElectrons} e−: {energyLabel}</text>
+        <line className="guided-energy-axis" x1="835" x2="835" y1="172" y2="358" />
+        <text className="guided-svg-label" x="821" y="164">energy</text>
+        <line className="bonding-starting-level" x1="846" x2="880" y1="230" y2="230" />
+        <text className="guided-svg-label" x="842" y="222">φA, φB</text>
+        <line className="guided-mixing-line" x1="878" x2="892" y1="230" y2={upperY} />
+        <line className="guided-mixing-line" x1="878" x2="892" y1="230" y2={lowerY} />
+        <rect className="bonding-selected-energy" x="884" y={(bonding ? lowerY : upperY) - 18} width="42" height="28" rx="14" />
+        <EnergyLevel x1={890} x2={914} y={upperY} label="ψ−" occupied={state.bondingElectrons === 4} />
+        <EnergyLevel x1={890} x2={914} y={lowerY} label="ψ+" occupied />
+        <text className="guided-svg-label" x="692" y="404">energy split = {energySplit.toFixed(2)}</text>
+        <text className="guided-svg-label" x="692" y="426">arbitrary relative energy units</text>
+        <text className="guided-svg-label" x="692" y="450">{state.bondingElectrons} e−: {energyLabel}</text>
       </svg>
 
-      <svg className="guided-main-svg bonding-mixing-svg bonding-mixing-svg--mobile" viewBox="0 0 360 820" role="img" aria-label="Stacked orbital mixing workbench showing signed addition, density, node, and bonding-antibonding energy pair">
+      <svg className="guided-main-svg bonding-mixing-svg bonding-mixing-svg--mobile" viewBox="0 0 360 980" role="img" aria-label="Stacked orbital mixing workbench showing twisted p atomic orbitals, pointwise signed amplitudes, and the pi/pi star energy pair">
         <defs>
           <marker id="bonding-arrowhead-mobile" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth">
             <path d="M 0 0 L 10 5 L 0 10 z" fill="#8c8175" />
           </marker>
         </defs>
-        <text className="guided-panel-title guided-panel-title--small" x="18" y="30">Two starting orbitals make two MOs</text>
-        <text className="guided-svg-label" x="18" y="52">{bonding ? 'ψ+ adds at the bond center.' : 'ψ− cancels at the bond center.'}</text>
+        <text className="guided-panel-title guided-panel-title--small" x="18" y="30">Phase picks ψ+/ψ−; twist changes overlap</text>
+        <text className="guided-svg-label" x="18" y="52">Selected: {activeMoLabel}. Twist = {twistDegrees.toFixed(0)}°.</text>
 
-        <rect className="bonding-panel-bg" x="18" y="70" width="324" height="190" rx="16" />
-        <text className="guided-panel-title guided-panel-title--small" x="36" y="102">1. Read the signs</text>
-        <PiLobes x={112} y={166} signs={[1, -1]} scale={0.86} />
-        <PiLobes x={244} y={166} signs={bonding ? [1, -1] : [-1, 1]} scale={0.86} />
-        <line className="guided-bond-axis" x1="78" x2="276" y1="166" y2="166" />
-        <circle className="bonding-center-probe" cx="178" cy="166" r="12" />
-        <text className="guided-svg-label" x="85" y="230">φA</text>
-        <text className="guided-svg-label" x="225" y="230">{bonding ? 'φB' : '−φB'}</text>
-        <text className="guided-svg-label" x="36" y="244">{signedDecimal(centerA)} + {signedDecimal(centerB)} = {signedDecimal(centerPsi)}</text>
+        <rect className="bonding-panel-bg" x="18" y="70" width="324" height="220" rx="16" />
+        <text className="guided-panel-title guided-panel-title--small" x="36" y="102">1. Starting AOs and twist</text>
+        <text className="guided-svg-label" x="36" y="124">φB visibly rotates out of alignment</text>
+        <line className="guided-bond-axis" x1="76" x2="284" y1="184" y2="184" />
+        <circle className="bonding-center-probe" cx="180" cy="184" r="11" />
+        <PiLobes x={114} y={184} signs={[1, -1]} scale={0.72} />
+        <RotatingPiLobes x={246} y={184} signs={[1, -1]} scale={0.72} angle={twistDegrees} />
+        <text className="guided-svg-label" x="88" y="256">φA</text>
+        <text className="guided-svg-label" x="224" y="256">φB</text>
+        <text className="guided-svg-label" x="36" y="278">S ≈ cos({twistDegrees.toFixed(0)}°) = {overlap.toFixed(2)}; overlap {overlapLabel}</text>
 
-        <path className="bonding-flow-arrow" markerEnd="url(#bonding-arrowhead-mobile)" d="M 180 274 C 180 290, 180 304, 180 320" />
-        <text className="guided-svg-label" x="196" y="302">add ψ</text>
+        <path className="bonding-flow-arrow" markerEnd="url(#bonding-arrowhead-mobile)" d="M 180 308 C 180 324, 180 338, 180 354" />
+        <text className="guided-svg-label" x="196" y="335">sample φ</text>
 
-        <rect className="bonding-panel-bg" x="18" y="334" width="324" height="205" rx="16" />
-        <text className="guided-panel-title guided-panel-title--small" x="36" y="366">2. Compare both MOs</text>
-        <text className="guided-svg-label" x="36" y="389">selected |ψ|² = {centerDensity.toFixed(2)}</text>
+        <rect className="bonding-panel-bg" x="18" y="368" width="324" height="210" rx="16" />
+        <text className="guided-panel-title guided-panel-title--small" x="36" y="400">2. Signed amplitude at one point</text>
+        <text className="guided-svg-label" x="36" y="424">{sampleEquationLabel}</text>
+        <text className="bonding-sample-line" x="36" y="460">φA(sample) = {signedDecimal(centerA)}</text>
+        <text className="bonding-sample-line" x="36" y="490">{centerBLabel} = {signedDecimal(centerB)}</text>
+        <text className="bonding-sample-line bonding-sample-line--result" x="36" y="528">{signedDecimal(centerA)} + {signedDecimal(centerB)} = {signedDecimal(centerPsi)}</text>
+        <text className="bonding-sample-line" x="36" y="558">density = |ψ|² = {centerDensity.toFixed(2)}</text>
+
+        <path className="bonding-flow-arrow" markerEnd="url(#bonding-arrowhead-mobile)" d="M 180 594 C 180 610, 180 624, 180 640" />
+        <text className="guided-svg-label" x="196" y="622">split levels</text>
+
+        <rect className="bonding-panel-bg" x="18" y="654" width="324" height="286" rx="16" />
+        <text className="guided-panel-title guided-panel-title--small" x="36" y="686">3. Two MOs and energy splitting</text>
+        <text className="guided-svg-label" x="36" y="708">energy split = {energySplit.toFixed(2)} arbitrary units</text>
         <g>
-          <rect className={`bonding-mo-row-bg ${bonding ? 'is-selected' : ''}`} x="36" y="402" width="288" height="56" rx="13" />
-          <text className="bonding-result-label" x="52" y="424">ψ+ bonding</text>
-          <ellipse className="guided-density-bridge" cx="218" cy="432" rx="64" ry="21" style={{ opacity: bridgeOpacity }} />
-          <line className="guided-bond-axis" x1="160" x2="276" y1="432" y2="432" />
-          <PiLobes x={180} y={432} signs={[1, -1]} scale={0.34} />
-          <PiLobes x={256} y={432} signs={[1, -1]} scale={0.34} />
+          <rect className={`bonding-mo-row-bg ${bonding ? 'is-selected' : ''}`} x="36" y="726" width="144" height="62" rx="13" />
+          <text className="bonding-result-label" x="50" y="748">ψ+ π</text>
+          <ellipse className="guided-density-bridge" cx="126" cy="765" rx="42" ry="18" style={{ opacity: bridgeOpacity }} />
+          <PiLobes x={104} y={765} signs={[1, -1]} scale={0.28} />
+          <PiLobes x={150} y={765} signs={[1, -1]} scale={0.28} />
         </g>
         <g>
-          <rect className={`bonding-mo-row-bg ${!bonding ? 'is-selected' : ''}`} x="36" y="468" width="288" height="56" rx="13" />
-          <text className="bonding-result-label" x="52" y="490">ψ− antibonding</text>
-          <line className="guided-bond-axis" x1="160" x2="276" y1="499" y2="499" />
-          <PiLobes x={180} y={499} signs={[1, -1]} scale={0.34} />
-          <PiLobes x={256} y={499} signs={[-1, 1]} scale={0.34} />
-          <rect className="guided-node-band" x="213" y="475" width="10" height="48" rx="5" style={{ opacity: nodeOpacity }} />
+          <rect className={`bonding-mo-row-bg ${!bonding ? 'is-selected' : ''}`} x="36" y="806" width="144" height="68" rx="13" />
+          <text className="bonding-result-label" x="50" y="828">ψ− π*</text>
+          <PiLobes x={104} y={848} signs={[1, -1]} scale={0.28} />
+          <PiLobes x={150} y={848} signs={[-1, 1]} scale={0.28} />
+          <rect className="guided-node-band" x="124" y="824" width="9" height="50" rx="5" style={{ opacity: nodeOpacity }} />
         </g>
-
-        <path className="bonding-flow-arrow" markerEnd="url(#bonding-arrowhead-mobile)" d="M 180 554 C 180 570, 180 584, 180 600" />
-        <text className="guided-svg-label" x="196" y="582">occupy levels</text>
-
-        <rect className="bonding-panel-bg" x="18" y="614" width="324" height="178" rx="16" />
-        <text className="guided-panel-title guided-panel-title--small" x="36" y="646">3. Energy pair</text>
-        <line className="guided-energy-axis" x1="62" x2="62" y1="668" y2="760" />
-        <text className="guided-svg-label" x="36" y="664">energy</text>
-        <line className="bonding-starting-level" x1="96" x2="156" y1="714" y2="714" />
-        <text className="guided-svg-label" x="98" y="704">φA, φB</text>
-        <line className="guided-mixing-line" x1="156" x2="226" y1="714" y2={660 + (upperY - 130) * 0.48} />
-        <line className="guided-mixing-line" x1="156" x2="226" y1="714" y2={700 + (lowerY - 230) * 0.48} />
-        <EnergyLevel x1={220} x2={286} y={660 + (upperY - 130) * 0.48} label="ψ−" occupied={state.bondingElectrons === 4} />
-        <EnergyLevel x1={220} x2={286} y={700 + (lowerY - 230) * 0.48} label="ψ+" occupied />
-        <text className="guided-svg-label" x="36" y="764">split = {energySplit.toFixed(2)} teaching units</text>
-        <text className="guided-svg-label" x="36" y="784">{state.bondingElectrons} electrons: {energyLabel}</text>
+        <line className="guided-energy-axis" x1="220" x2="220" y1="724" y2="884" />
+        <line className="bonding-starting-level" x1="236" x2="274" y1="758" y2="758" />
+        <text className="guided-svg-label" x="236" y="748">φA, φB</text>
+        <line className="guided-mixing-line" x1="274" x2="292" y1="758" y2={upperYMobile} />
+        <line className="guided-mixing-line" x1="274" x2="292" y1="758" y2={lowerYMobile} />
+        <EnergyLevel x1={290} x2={326} y={upperYMobile} label="ψ−" occupied={state.bondingElectrons === 4} />
+        <EnergyLevel x1={290} x2={326} y={lowerYMobile} label="ψ+" occupied />
+        <text className="guided-svg-label" x="36" y="916">{state.bondingElectrons} electrons: {energyLabel}</text>
       </svg>
     </div>
   );
@@ -623,7 +682,10 @@ function VisualPanel({
 }
 
 function interactionSummaryFor(visual: VisualKind, state: ControlState): string {
-  if (visual === 'bonding') return `phase=${state.phase}; interaction=${state.interaction.toFixed(2)}`;
+  if (visual === 'bonding') {
+    const overlap = clamp(Math.cos((state.twist * Math.PI) / 180), 0, 1);
+    return `phase=${state.phase}; twist=${state.twist.toFixed(0)}deg; overlap=${overlap.toFixed(2)}; electrons=${state.bondingElectrons}`;
+  }
   if (visual === 'overlap') return `phase=${state.phase}; distance=${state.distance.toFixed(2)}; compactness=${state.compactness.toFixed(2)}`;
   if (visual === 'energy-gap') return `energyGap=${state.energyGap.toFixed(2)}; interaction=${state.interaction.toFixed(2)}`;
   if (visual === 'polarization') return `heteroatomEnergyLowering=${state.electronegativity.toFixed(2)}`;
