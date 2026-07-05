@@ -38,12 +38,20 @@ describe('guided rest lesson integration', () => {
     const lesson = guidedLessonContent.bonding;
     expect(lesson.visual).toBe('bonding');
     expect(lesson.stages.map((stage) => stage.id)).toEqual(['in-phase', 'out-of-phase', 'energy-pair']);
+    expect(lesson.stages[0]?.lead).toContain('In the last lesson');
+    expect(lesson.stages[0]?.lead).toContain('two molecular orbitals');
+    expect(lesson.stages[0]?.lead).toContain('bonding combination');
     expect(lesson.stages[0]?.equation).toContain('ψ+ = φA + φB');
     expect(lesson.stages[1]?.equation).toContain('|0|²');
     expect(lesson.stages[2]?.equation).toContain('2 AOs -> ψ+ lower + ψ− higher');
     expect(lesson.stages[2]?.lead).toContain('not changing the bond length');
     expect(lesson.stages[2]?.lead).toContain('not making the orbital cloud physically expand');
     expect(lesson.endItems.some((item) => item.id === 'bond-transfer-short')).toBe(true);
+  });
+
+  it('keeps purpose copy out of the shared lesson header so step cards carry the explanation', () => {
+    const shell = readFileSync(resolve(process.cwd(), 'src/components/LessonShell/LessonShell.tsx'), 'utf8');
+    expect(shell).not.toContain('<p>{purpose}</p>');
   });
 });
 

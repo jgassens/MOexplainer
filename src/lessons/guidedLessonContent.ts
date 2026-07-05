@@ -386,7 +386,7 @@ export const guidedLessonContent: Record<GuidedRestLessonId, GuidedLessonData> =
         id: 'in-phase',
         shortTitle: 'Add signs',
         title: 'The bond center is a signed-addition test',
-        lead: 'Two p orbitals are the starting orbitals, labeled φA and φB. The molecular orbital ψ is built by adding their signed wave amplitudes at each point in space, so begin at the bond center, the region between the two nuclei. If the two values have the same sign there, the addition reinforces; if they have opposite signs there, the addition cancels before density is even discussed.',
+        lead: 'In the last lesson, we learned that a molecular orbital is made by combining values from starting orbitals: ψ = cA φA + cB φB. Here we refine that idea into the chapter’s orbital-mixing picture. Start with two neighboring p orbitals, φA and φB. Because there are two starting orbitals, the mixing must produce two molecular orbitals: one same-sign, bonding combination and one opposite-sign, antibonding combination. The quick test is the bond center, the region between the nuclei. If the facing wave amplitudes have the same sign there, the values reinforce and can build density between the atoms. If the facing values have opposite signs there, they cancel at the center and set up the node that identifies the antibonding orbital.',
         equation: 'ψ+ = φA + φB; ψ− = φA − φB',
         correction: 'Do not read + and − as charge. They are the signs of wave amplitude at the same point in space.',
       },

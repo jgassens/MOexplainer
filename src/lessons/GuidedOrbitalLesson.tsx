@@ -156,7 +156,7 @@ function BondingVisual({ state, setState }: { state: ControlState; setState: (pa
         <label className="bonding-slider-control">
           <span>interaction strength <strong>{state.interaction.toFixed(2)}</strong></span>
           <input type="range" min="0.18" max="0.95" step="0.01" value={state.interaction} onChange={(event) => setState({ interaction: Number(event.currentTarget.value) })} />
-          <em className="bonding-slider-note">This slider changes the teaching-model interaction, not bond length and not orbital-cloud size. A stronger interaction widens the ψ+/ψ− energy split.</em>
+          <em className="bonding-slider-note">This slider is the input: the chosen teaching-model interaction strength. It is not bond length, not orbital-cloud size, and not a separate gap measurement. A stronger input widens the ψ+/ψ− energy split.</em>
         </label>
         <div className="bonding-control-group">
           <span className="bonding-control-heading">Electron count</span>
@@ -169,9 +169,9 @@ function BondingVisual({ state, setState }: { state: ControlState; setState: (pa
 
       <div className="bonding-readout-grid" aria-label="Bonding and antibonding orbital mixing readouts">
         <div className="bonding-readout-card">
-          <span>Signed addition at the bond center</span>
+          <span>Fixed bond-center sample</span>
           <strong>{signedDecimal(centerA)} + {signedDecimal(centerB)} = {signedDecimal(centerPsi)}</strong>
-          <p>{bonding ? 'Same phase gives a large wave amplitude between nuclei.' : 'Opposite phase cancels the wave amplitude between nuclei.'}</p>
+          <p>{bonding ? 'This arithmetic sample tests the signs at one point. It changes when you switch ψ+ and ψ−, not when you move the interaction slider.' : 'This arithmetic sample shows cancellation for ψ−. The slider changes the energy split after this sign pattern is chosen.'}</p>
         </div>
         <div className="bonding-readout-card">
           <span>Then square ψ to see density</span>
@@ -179,9 +179,9 @@ function BondingVisual({ state, setState }: { state: ControlState; setState: (pa
           <p>{bonding ? 'Density builds in the bonding region.' : 'Zero density at the center marks a node.'}</p>
         </div>
         <div className="bonding-readout-card">
-          <span>What the slider changes</span>
+          <span>Slider input to energy split</span>
           <strong>energy split = {energySplit.toFixed(2)} teaching units</strong>
-          <p>Stronger interaction separates ψ+ and ψ− more. It does not make the bond breathe.</p>
+          <p>The interaction value is the cause. A larger input separates ψ+ and ψ− more; it is not a separate gap meter.</p>
         </div>
         <div className={`bonding-readout-card ${netEnergy > 0 ? 'is-destabilizing' : 'is-stabilizing'}`}>
           <span>Electron occupancy decides the consequence</span>
@@ -232,23 +232,23 @@ function BondingVisual({ state, setState }: { state: ControlState; setState: (pa
         )}
         <line className="guided-bond-axis" x1="455" x2="603" y1="230" y2="230" />
 
-        <path className="bonding-flow-arrow" d="M 650 230 C 676 230, 696 230, 722 230" />
-        <text className="guided-svg-label" x="660" y="207">place electrons</text>
+        <path className="bonding-flow-arrow" d="M 650 230 C 674 230, 690 230, 710 230" />
+        <text className="guided-svg-label" x="666" y="207">fill pair</text>
 
-        <rect className="bonding-panel-bg" x="736" y="82" width="156" height="318" rx="18" />
-        <text className="guided-panel-title guided-panel-title--small" x="758" y="118">3. Energy pair</text>
-        <line className="guided-energy-axis" x1="758" x2="758" y1="145" y2="338" />
-        <text className="guided-svg-label" x="744" y="137">energy</text>
-        <line className="bonding-starting-level" x1="772" x2="820" y1="226" y2="226" />
-        <text className="guided-svg-label" x="775" y="218">φA, φB</text>
-        <line className="guided-mixing-line" x1="820" x2="862" y1="226" y2={upperY} />
-        <line className="guided-mixing-line" x1="820" x2="862" y1="226" y2={lowerY} />
-        <EnergyLevel x1={830} x2={880} y={upperY} label="ψ−" occupied={state.bondingElectrons === 4} />
-        <EnergyLevel x1={830} x2={880} y={lowerY} label="ψ+" occupied />
-        <text className="guided-svg-label" x="758" y="350">interaction</text>
-        <rect className="guided-meter-bg" x="758" y="360" width="108" height="14" rx="7" />
-        <rect className="guided-meter-fill" x="758" y="360" width={Math.max(6, interactionFill * 1.08)} height="14" rx="7" />
-        <text className="guided-svg-label" x="758" y="393">{state.bondingElectrons} electrons: {energyLabel}</text>
+        <rect className="bonding-panel-bg" x="718" y="82" width="174" height="318" rx="18" />
+        <text className="guided-panel-title guided-panel-title--small" x="740" y="118">3. Energy pair</text>
+        <line className="guided-energy-axis" x1="740" x2="740" y1="145" y2="338" />
+        <text className="guided-svg-label" x="726" y="137">energy</text>
+        <line className="bonding-starting-level" x1="754" x2="802" y1="226" y2="226" />
+        <text className="guided-svg-label" x="756" y="218">φA, φB</text>
+        <line className="guided-mixing-line" x1="802" x2="844" y1="226" y2={upperY} />
+        <line className="guided-mixing-line" x1="802" x2="844" y1="226" y2={lowerY} />
+        <EnergyLevel x1={812} x2={862} y={upperY} label="ψ−" occupied={state.bondingElectrons === 4} />
+        <EnergyLevel x1={812} x2={862} y={lowerY} label="ψ+" occupied />
+        <text className="guided-svg-label" x="740" y="350">slider input</text>
+        <rect className="guided-meter-bg" x="740" y="360" width="116" height="14" rx="7" />
+        <rect className="guided-meter-fill" x="740" y="360" width={Math.max(6, interactionFill * 1.16)} height="14" rx="7" />
+        <text className="guided-svg-label" x="740" y="393">{state.bondingElectrons} e−: {energyLabel}</text>
       </svg>
 
       <svg className="guided-main-svg bonding-mixing-svg bonding-mixing-svg--mobile" viewBox="0 0 360 820" role="img" aria-label="Stacked orbital mixing workbench showing signed addition, density, node, and bonding-antibonding energy pair">

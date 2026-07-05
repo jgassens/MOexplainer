@@ -21,7 +21,6 @@ interface LessonShellProps {
 
 export function LessonShell({
   meta,
-  purpose,
   question,
   children,
   feedback,
@@ -48,7 +47,6 @@ export function LessonShell({
         <div>
           <p className="lesson-shell__step">Lesson {meta.number}</p>
           <h1>{meta.title}</h1>
-          <p>{purpose}</p>
         </div>
         {showPhaseLegend ? <PhaseLegend /> : null}
       </header>
