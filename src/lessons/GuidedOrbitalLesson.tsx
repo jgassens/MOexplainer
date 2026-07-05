@@ -22,6 +22,7 @@ interface ControlState {
   twist: number;
   geometry: number;
   electrons: 6 | 7 | 8;
+  bondingElectrons: 2 | 4;
   atomCount: number;
   orbitalIndex: number;
   calculationFeature: 'nodes' | 'phase' | 'coefficients';
@@ -38,6 +39,7 @@ const defaultState: ControlState = {
   twist: 0,
   geometry: 0.55,
   electrons: 8,
+  bondingElectrons: 2,
   atomCount: 4,
   orbitalIndex: 2,
   calculationFeature: 'nodes',
@@ -49,6 +51,11 @@ function clamp(value: number, minimum: number, maximum: number): number {
 
 function percent(value: number): string {
   return `${Math.round(value * 100)}%`;
+}
+
+function signedDecimal(value: number): string {
+  if (Math.abs(value) < 0.005) return '0.00';
+  return `${value > 0 ? '+' : '−'}${Math.abs(value).toFixed(2)}`;
 }
 
 function signText(sign: 1 | -1): string {
@@ -119,33 +126,165 @@ function EnergyLevel({ x1, x2, y, label, occupied = false }: { x1: number; x2: n
 
 function BondingVisual({ state, setState }: { state: ControlState; setState: (patch: Partial<ControlState>) => void }) {
   const bonding = state.phase === 'bonding';
-  const split = 0.55 + state.interaction;
+  const centerA = 0.6;
+  const centerB = bonding ? 0.6 : -0.6;
+  const centerPsi = centerA + centerB;
+  const centerDensity = centerPsi ** 2;
+  const lowerShift = -0.72 * state.interaction;
+  const upperShift = 1.08 * state.interaction;
+  const netEnergy = 2 * lowerShift + (state.bondingElectrons === 4 ? 2 * upperShift : 0);
+  const energyLabel = netEnergy < 0 ? 'net stabilizing' : 'net destabilizing';
+  const energyCopy =
+    state.bondingElectrons === 2
+      ? 'Two electrons occupy only the lower bonding MO, so the interaction makes a bond.'
+      : 'Four electrons fill both MOs. The antibonding rise is larger, so the filled-filled interaction is repulsive.';
+  const lowerY = 250 - lowerShift * 62;
+  const upperY = 170 - upperShift * 62;
+  const bridgeOpacity = 0.16 + state.interaction * 0.28;
+  const bridgeRx = 58 + state.interaction * 62;
   return (
     <div className="guided-visual-block">
-      <div className="guided-control-row">
-        <button type="button" className={bonding ? 'is-active' : ''} onClick={() => setState({ phase: 'bonding' })}>same phase</button>
-        <button type="button" className={!bonding ? 'is-active' : ''} onClick={() => setState({ phase: 'antibonding' })}>opposite phase</button>
-        <label>interaction strength {state.interaction.toFixed(2)}
-          <input type="range" min="0.15" max="0.75" step="0.01" value={state.interaction} onChange={(event) => setState({ interaction: Number(event.currentTarget.value) })} />
+      <div className="guided-control-row guided-control-row--stacked bonding-control-row">
+        <button type="button" className={bonding ? 'is-active' : ''} onClick={() => setState({ phase: 'bonding' })}>show ψ+ bonding</button>
+        <button type="button" className={!bonding ? 'is-active' : ''} onClick={() => setState({ phase: 'antibonding' })}>show ψ− antibonding</button>
+        <label>overlap strength {state.interaction.toFixed(2)}
+          <input type="range" min="0.18" max="0.95" step="0.01" value={state.interaction} onChange={(event) => setState({ interaction: Number(event.currentTarget.value) })} />
         </label>
+        <button type="button" className={state.bondingElectrons === 2 ? 'is-active' : ''} onClick={() => setState({ bondingElectrons: 2 })}>2 e−: bonding MO occupied</button>
+        <button type="button" className={state.bondingElectrons === 4 ? 'is-active' : ''} onClick={() => setState({ bondingElectrons: 4 })}>4 e−: both MOs occupied</button>
       </div>
-      <svg className="guided-main-svg" viewBox="0 0 760 360" role="img" aria-label="Bonding and antibonding orbital visual with plus and minus phase labels">
-        <text className="guided-panel-title" x="34" y="34">{bonding ? 'Bonding: in-phase overlap' : 'Antibonding: out-of-phase overlap'}</text>
-        <PiLobes x={250} y={150} signs={[1, -1]} />
-        <PiLobes x={390} y={150} signs={bonding ? [1, -1] : [-1, 1]} />
+
+      <div className="bonding-readout-grid" aria-label="Bonding and antibonding orbital mixing readouts">
+        <div className="bonding-readout-card">
+          <span>Signed addition at the bond center</span>
+          <strong>{signedDecimal(centerA)} + {signedDecimal(centerB)} = {signedDecimal(centerPsi)}</strong>
+          <p>{bonding ? 'Same phase gives a large wave amplitude between nuclei.' : 'Opposite phase cancels the wave amplitude between nuclei.'}</p>
+        </div>
+        <div className="bonding-readout-card">
+          <span>Then square ψ to see density</span>
+          <strong>|ψ|² = {centerDensity.toFixed(2)}</strong>
+          <p>{bonding ? 'Density builds in the bonding region.' : 'Zero density at the center marks a node.'}</p>
+        </div>
+        <div className={`bonding-readout-card ${netEnergy > 0 ? 'is-destabilizing' : 'is-stabilizing'}`}>
+          <span>Electron occupancy decides the consequence</span>
+          <strong>{energyLabel}: {signedDecimal(netEnergy)} teaching units</strong>
+          <p>{energyCopy}</p>
+        </div>
+      </div>
+
+      <svg className="guided-main-svg bonding-mixing-svg bonding-mixing-svg--desktop" viewBox="0 0 920 450" role="img" aria-label="Orbital mixing workbench showing signed addition, density, node, and bonding-antibonding energy pair">
+        <defs>
+          <marker id="bonding-arrowhead" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#8c8175" />
+          </marker>
+        </defs>
+        <text className="guided-panel-title" x="28" y="34">Two starting orbitals make two molecular orbitals</text>
+        <text className="guided-svg-label" x="28" y="58">The selected combination is {bonding ? 'ψ+ = φA + φB, the lower bonding MO.' : 'ψ− = φA − φB, the higher antibonding MO with a node.'}</text>
+
+        <rect className="bonding-panel-bg" x="28" y="82" width="285" height="318" rx="18" />
+        <text className="guided-panel-title guided-panel-title--small" x="50" y="118">1. Start with two p orbitals</text>
+        <PiLobes x={125} y={230} signs={[1, -1]} scale={0.9} />
+        <PiLobes x={230} y={230} signs={bonding ? [1, -1] : [-1, 1]} scale={0.9} />
+        <text className="guided-svg-label" x="104" y="326">φA</text>
+        <text className="guided-svg-label" x="212" y="326">{bonding ? 'φB' : '−φB'}</text>
+        <line className="guided-bond-axis" x1="92" x2="263" y1="230" y2="230" />
+        <circle className="bonding-center-probe" cx="178" cy="230" r="12" />
+        <text className="guided-svg-label" x="84" y="365">read the signs where the orbitals meet</text>
+
+        <path className="bonding-flow-arrow" d="M 330 230 C 358 230, 378 230, 406 230" />
+        <text className="guided-svg-label" x="338" y="207">add ψ values</text>
+
+        <rect className="bonding-panel-bg" x="422" y="82" width="215" height="318" rx="18" />
+        <text className="guided-panel-title guided-panel-title--small" x="444" y="118">2. Resulting MO</text>
+        <text className="guided-svg-label" x="444" y="142">{bonding ? 'constructive overlap' : 'destructive overlap'}</text>
         {bonding ? (
-          <ellipse className="guided-density-bridge" cx="320" cy="150" rx="108" ry="48" />
+          <g>
+            <ellipse className="guided-density-bridge" cx="529" cy="230" rx={bridgeRx} ry="58" style={{ opacity: bridgeOpacity }} />
+            <PiLobes x={485} y={230} signs={[1, -1]} scale={0.78} />
+            <PiLobes x={573} y={230} signs={[1, -1]} scale={0.78} />
+            <text className="bonding-result-label" x="529" y="331">density between nuclei</text>
+          </g>
         ) : (
           <g>
-            <rect className="guided-node-band" x="314" y="68" width="12" height="164" rx="6" />
-            <text className="guided-svg-label" x="292" y="252">node</text>
+            <PiLobes x={485} y={230} signs={[1, -1]} scale={0.78} />
+            <PiLobes x={573} y={230} signs={[-1, 1]} scale={0.78} />
+            <rect className="guided-node-band" x="523" y="146" width="12" height="170" rx="6" />
+            <text className="bonding-result-label" x="500" y="335">node: ψ = 0</text>
           </g>
         )}
-        <line className="guided-bond-axis" x1="178" x2="462" y1="150" y2="150" />
-        <EnergyLevel x1={560} x2={640} y={104 - split * 26} label={bonding ? 'sigma* / pi*' : 'selected MO'} occupied={!bonding} />
-        <EnergyLevel x1={560} x2={640} y={238 + split * 26} label={bonding ? 'selected MO' : 'sigma / pi'} occupied={bonding} />
-        <line className="guided-energy-axis" x1="540" x2="540" y1="70" y2="286" />
-        <text className="guided-svg-label" x="524" y="62">energy</text>
+        <line className="guided-bond-axis" x1="455" x2="603" y1="230" y2="230" />
+
+        <path className="bonding-flow-arrow" d="M 650 230 C 676 230, 696 230, 722 230" />
+        <text className="guided-svg-label" x="660" y="207">place electrons</text>
+
+        <rect className="bonding-panel-bg" x="736" y="82" width="156" height="318" rx="18" />
+        <text className="guided-panel-title guided-panel-title--small" x="758" y="118">3. Energy pair</text>
+        <line className="guided-energy-axis" x1="758" x2="758" y1="145" y2="338" />
+        <text className="guided-svg-label" x="744" y="137">energy</text>
+        <line className="bonding-starting-level" x1="772" x2="820" y1="226" y2="226" />
+        <text className="guided-svg-label" x="775" y="218">φA, φB</text>
+        <line className="guided-mixing-line" x1="820" x2="862" y1="226" y2={upperY} />
+        <line className="guided-mixing-line" x1="820" x2="862" y1="226" y2={lowerY} />
+        <EnergyLevel x1={830} x2={880} y={upperY} label="ψ−" occupied={state.bondingElectrons === 4} />
+        <EnergyLevel x1={830} x2={880} y={lowerY} label="ψ+" occupied />
+        <text className="guided-svg-label" x="758" y="372">{state.bondingElectrons} electrons: {energyLabel}</text>
+      </svg>
+
+      <svg className="guided-main-svg bonding-mixing-svg bonding-mixing-svg--mobile" viewBox="0 0 360 820" role="img" aria-label="Stacked orbital mixing workbench showing signed addition, density, node, and bonding-antibonding energy pair">
+        <defs>
+          <marker id="bonding-arrowhead-mobile" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#8c8175" />
+          </marker>
+        </defs>
+        <text className="guided-panel-title guided-panel-title--small" x="18" y="30">Two starting orbitals make two MOs</text>
+        <text className="guided-svg-label" x="18" y="52">{bonding ? 'ψ+ adds at the bond center.' : 'ψ− cancels at the bond center.'}</text>
+
+        <rect className="bonding-panel-bg" x="18" y="70" width="324" height="190" rx="16" />
+        <text className="guided-panel-title guided-panel-title--small" x="36" y="102">1. Read the signs</text>
+        <PiLobes x={112} y={166} signs={[1, -1]} scale={0.86} />
+        <PiLobes x={244} y={166} signs={bonding ? [1, -1] : [-1, 1]} scale={0.86} />
+        <line className="guided-bond-axis" x1="78" x2="276" y1="166" y2="166" />
+        <circle className="bonding-center-probe" cx="178" cy="166" r="12" />
+        <text className="guided-svg-label" x="85" y="230">φA</text>
+        <text className="guided-svg-label" x="225" y="230">{bonding ? 'φB' : '−φB'}</text>
+        <text className="guided-svg-label" x="36" y="244">{signedDecimal(centerA)} + {signedDecimal(centerB)} = {signedDecimal(centerPsi)}</text>
+
+        <path className="bonding-flow-arrow" markerEnd="url(#bonding-arrowhead-mobile)" d="M 180 274 C 180 290, 180 304, 180 320" />
+        <text className="guided-svg-label" x="196" y="302">add ψ</text>
+
+        <rect className="bonding-panel-bg" x="18" y="334" width="324" height="205" rx="16" />
+        <text className="guided-panel-title guided-panel-title--small" x="36" y="366">2. Square the result</text>
+        <text className="guided-svg-label" x="36" y="389">|ψ|² = {centerDensity.toFixed(2)}</text>
+        {bonding ? (
+          <g>
+            <ellipse className="guided-density-bridge" cx="180" cy="448" rx={bridgeRx * 0.78} ry="50" style={{ opacity: bridgeOpacity }} />
+            <PiLobes x={124} y={448} signs={[1, -1]} scale={0.76} />
+            <PiLobes x={236} y={448} signs={[1, -1]} scale={0.76} />
+            <text className="bonding-result-label" x="180" y="515" textAnchor="middle">density between nuclei</text>
+          </g>
+        ) : (
+          <g>
+            <PiLobes x={124} y={448} signs={[1, -1]} scale={0.76} />
+            <PiLobes x={236} y={448} signs={[-1, 1]} scale={0.76} />
+            <rect className="guided-node-band" x="173" y="380" width="14" height="136" rx="7" />
+            <text className="bonding-result-label" x="180" y="520" textAnchor="middle">node: ψ = 0</text>
+          </g>
+        )}
+
+        <path className="bonding-flow-arrow" markerEnd="url(#bonding-arrowhead-mobile)" d="M 180 554 C 180 570, 180 584, 180 600" />
+        <text className="guided-svg-label" x="196" y="582">place e−</text>
+
+        <rect className="bonding-panel-bg" x="18" y="614" width="324" height="178" rx="16" />
+        <text className="guided-panel-title guided-panel-title--small" x="36" y="646">3. Energy pair</text>
+        <line className="guided-energy-axis" x1="62" x2="62" y1="668" y2="760" />
+        <text className="guided-svg-label" x="36" y="664">energy</text>
+        <line className="bonding-starting-level" x1="96" x2="156" y1="714" y2="714" />
+        <text className="guided-svg-label" x="98" y="704">φA, φB</text>
+        <line className="guided-mixing-line" x1="156" x2="226" y1="714" y2={660 + (upperY - 130) * 0.48} />
+        <line className="guided-mixing-line" x1="156" x2="226" y1="714" y2={700 + (lowerY - 230) * 0.48} />
+        <EnergyLevel x1={220} x2={286} y={660 + (upperY - 130) * 0.48} label="ψ−" occupied={state.bondingElectrons === 4} />
+        <EnergyLevel x1={220} x2={286} y={700 + (lowerY - 230) * 0.48} label="ψ+" occupied />
+        <text className="guided-svg-label" x="36" y="780">{state.bondingElectrons} electrons: {energyLabel}</text>
       </svg>
     </div>
   );

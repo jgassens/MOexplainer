@@ -33,6 +33,16 @@ describe('guided rest lesson integration', () => {
       expect(lesson.endItems.length).toBeGreaterThanOrEqual(2);
     }
   });
+
+  it('keeps Lesson 3 centered on signed addition, density/node formation, and the bonding-antibonding energy pair', () => {
+    const lesson = guidedLessonContent.bonding;
+    expect(lesson.visual).toBe('bonding');
+    expect(lesson.stages.map((stage) => stage.id)).toEqual(['in-phase', 'out-of-phase', 'energy-pair']);
+    expect(lesson.stages[0]?.equation).toContain('ψ+ = φA + φB');
+    expect(lesson.stages[1]?.equation).toContain('|0|²');
+    expect(lesson.stages[2]?.equation).toContain('2 AOs -> ψ+ lower + ψ− higher');
+    expect(lesson.endItems.some((item) => item.id === 'bond-transfer-short')).toBe(true);
+  });
 });
 
 describe('deployment entrypoint guard', () => {
