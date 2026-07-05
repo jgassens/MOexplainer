@@ -954,6 +954,16 @@
 }
 
 @media (max-width: 1320px) {
+  .stage-workspace--local .point-addition {
+    grid-template-columns: 1fr;
+  }
+
+  .stage-workspace--local .number-tile {
+    min-height: 70px;
+  }
+}
+
+@media (max-width: 900px) {
   .stage-workspace {
     grid-template-columns: 1fr;
   }
