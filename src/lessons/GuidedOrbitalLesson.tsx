@@ -132,6 +132,7 @@ function BondingVisual({ state, setState }: { state: ControlState; setState: (pa
   const centerDensity = centerPsi ** 2;
   const lowerShift = -0.72 * state.interaction;
   const upperShift = 1.08 * state.interaction;
+  const energySplit = upperShift - lowerShift;
   const netEnergy = 2 * lowerShift + (state.bondingElectrons === 4 ? 2 * upperShift : 0);
   const energyLabel = netEnergy < 0 ? 'net stabilizing' : 'net destabilizing';
   const energyCopy =
@@ -140,18 +141,30 @@ function BondingVisual({ state, setState }: { state: ControlState; setState: (pa
       : 'Four electrons fill both MOs. The antibonding rise is larger, so the filled-filled interaction is repulsive.';
   const lowerY = 250 - lowerShift * 62;
   const upperY = 170 - upperShift * 62;
-  const bridgeOpacity = 0.16 + state.interaction * 0.28;
-  const bridgeRx = 58 + state.interaction * 62;
+  const bridgeOpacity = 0.28;
+  const interactionFill = ((state.interaction - 0.18) / (0.95 - 0.18)) * 100;
   return (
     <div className="guided-visual-block">
-      <div className="guided-control-row guided-control-row--stacked bonding-control-row">
-        <button type="button" className={bonding ? 'is-active' : ''} onClick={() => setState({ phase: 'bonding' })}>show ψ+ bonding</button>
-        <button type="button" className={!bonding ? 'is-active' : ''} onClick={() => setState({ phase: 'antibonding' })}>show ψ− antibonding</button>
-        <label>overlap strength {state.interaction.toFixed(2)}
+      <div className="guided-control-row bonding-control-row" aria-label="Bonding and antibonding controls">
+        <div className="bonding-control-group">
+          <span className="bonding-control-heading">Combination to inspect</span>
+          <div className="bonding-button-group">
+            <button type="button" className={bonding ? 'is-active' : ''} onClick={() => setState({ phase: 'bonding' })}>show ψ+ bonding</button>
+            <button type="button" className={!bonding ? 'is-active' : ''} onClick={() => setState({ phase: 'antibonding' })}>show ψ− antibonding</button>
+          </div>
+        </div>
+        <label className="bonding-slider-control">
+          <span>interaction strength <strong>{state.interaction.toFixed(2)}</strong></span>
           <input type="range" min="0.18" max="0.95" step="0.01" value={state.interaction} onChange={(event) => setState({ interaction: Number(event.currentTarget.value) })} />
+          <em className="bonding-slider-note">This slider changes the teaching-model interaction, not bond length and not orbital-cloud size. A stronger interaction widens the ψ+/ψ− energy split.</em>
         </label>
-        <button type="button" className={state.bondingElectrons === 2 ? 'is-active' : ''} onClick={() => setState({ bondingElectrons: 2 })}>2 e−: bonding MO occupied</button>
-        <button type="button" className={state.bondingElectrons === 4 ? 'is-active' : ''} onClick={() => setState({ bondingElectrons: 4 })}>4 e−: both MOs occupied</button>
+        <div className="bonding-control-group">
+          <span className="bonding-control-heading">Electron count</span>
+          <div className="bonding-button-group">
+            <button type="button" className={state.bondingElectrons === 2 ? 'is-active' : ''} onClick={() => setState({ bondingElectrons: 2 })}>2 e−: bonding MO occupied</button>
+            <button type="button" className={state.bondingElectrons === 4 ? 'is-active' : ''} onClick={() => setState({ bondingElectrons: 4 })}>4 e−: both MOs occupied</button>
+          </div>
+        </div>
       </div>
 
       <div className="bonding-readout-grid" aria-label="Bonding and antibonding orbital mixing readouts">
@@ -164,6 +177,11 @@ function BondingVisual({ state, setState }: { state: ControlState; setState: (pa
           <span>Then square ψ to see density</span>
           <strong>|ψ|² = {centerDensity.toFixed(2)}</strong>
           <p>{bonding ? 'Density builds in the bonding region.' : 'Zero density at the center marks a node.'}</p>
+        </div>
+        <div className="bonding-readout-card">
+          <span>What the slider changes</span>
+          <strong>energy split = {energySplit.toFixed(2)} teaching units</strong>
+          <p>Stronger interaction separates ψ+ and ψ− more. It does not make the bond breathe.</p>
         </div>
         <div className={`bonding-readout-card ${netEnergy > 0 ? 'is-destabilizing' : 'is-stabilizing'}`}>
           <span>Electron occupancy decides the consequence</span>
@@ -199,7 +217,7 @@ function BondingVisual({ state, setState }: { state: ControlState; setState: (pa
         <text className="guided-svg-label" x="444" y="142">{bonding ? 'constructive overlap' : 'destructive overlap'}</text>
         {bonding ? (
           <g>
-            <ellipse className="guided-density-bridge" cx="529" cy="230" rx={bridgeRx} ry="58" style={{ opacity: bridgeOpacity }} />
+            <ellipse className="guided-density-bridge" cx="529" cy="230" rx="92" ry="58" style={{ opacity: bridgeOpacity }} />
             <PiLobes x={485} y={230} signs={[1, -1]} scale={0.78} />
             <PiLobes x={573} y={230} signs={[1, -1]} scale={0.78} />
             <text className="bonding-result-label" x="529" y="331">density between nuclei</text>
@@ -227,7 +245,10 @@ function BondingVisual({ state, setState }: { state: ControlState; setState: (pa
         <line className="guided-mixing-line" x1="820" x2="862" y1="226" y2={lowerY} />
         <EnergyLevel x1={830} x2={880} y={upperY} label="ψ−" occupied={state.bondingElectrons === 4} />
         <EnergyLevel x1={830} x2={880} y={lowerY} label="ψ+" occupied />
-        <text className="guided-svg-label" x="758" y="372">{state.bondingElectrons} electrons: {energyLabel}</text>
+        <text className="guided-svg-label" x="758" y="350">interaction</text>
+        <rect className="guided-meter-bg" x="758" y="360" width="108" height="14" rx="7" />
+        <rect className="guided-meter-fill" x="758" y="360" width={Math.max(6, interactionFill * 1.08)} height="14" rx="7" />
+        <text className="guided-svg-label" x="758" y="393">{state.bondingElectrons} electrons: {energyLabel}</text>
       </svg>
 
       <svg className="guided-main-svg bonding-mixing-svg bonding-mixing-svg--mobile" viewBox="0 0 360 820" role="img" aria-label="Stacked orbital mixing workbench showing signed addition, density, node, and bonding-antibonding energy pair">
@@ -257,7 +278,7 @@ function BondingVisual({ state, setState }: { state: ControlState; setState: (pa
         <text className="guided-svg-label" x="36" y="389">|ψ|² = {centerDensity.toFixed(2)}</text>
         {bonding ? (
           <g>
-            <ellipse className="guided-density-bridge" cx="180" cy="448" rx={bridgeRx * 0.78} ry="50" style={{ opacity: bridgeOpacity }} />
+            <ellipse className="guided-density-bridge" cx="180" cy="448" rx="72" ry="50" style={{ opacity: bridgeOpacity }} />
             <PiLobes x={124} y={448} signs={[1, -1]} scale={0.76} />
             <PiLobes x={236} y={448} signs={[1, -1]} scale={0.76} />
             <text className="bonding-result-label" x="180" y="515" textAnchor="middle">density between nuclei</text>
@@ -284,7 +305,8 @@ function BondingVisual({ state, setState }: { state: ControlState; setState: (pa
         <line className="guided-mixing-line" x1="156" x2="226" y1="714" y2={700 + (lowerY - 230) * 0.48} />
         <EnergyLevel x1={220} x2={286} y={660 + (upperY - 130) * 0.48} label="ψ−" occupied={state.bondingElectrons === 4} />
         <EnergyLevel x1={220} x2={286} y={700 + (lowerY - 230) * 0.48} label="ψ+" occupied />
-        <text className="guided-svg-label" x="36" y="780">{state.bondingElectrons} electrons: {energyLabel}</text>
+        <text className="guided-svg-label" x="36" y="764">split = {energySplit.toFixed(2)} teaching units</text>
+        <text className="guided-svg-label" x="36" y="784">{state.bondingElectrons} electrons: {energyLabel}</text>
       </svg>
     </div>
   );

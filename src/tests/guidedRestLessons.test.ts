@@ -41,6 +41,8 @@ describe('guided rest lesson integration', () => {
     expect(lesson.stages[0]?.equation).toContain('ψ+ = φA + φB');
     expect(lesson.stages[1]?.equation).toContain('|0|²');
     expect(lesson.stages[2]?.equation).toContain('2 AOs -> ψ+ lower + ψ− higher');
+    expect(lesson.stages[2]?.lead).toContain('not changing the bond length');
+    expect(lesson.stages[2]?.lead).toContain('not making the orbital cloud physically expand');
     expect(lesson.endItems.some((item) => item.id === 'bond-transfer-short')).toBe(true);
   });
 });

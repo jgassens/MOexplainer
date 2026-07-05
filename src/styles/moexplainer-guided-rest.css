@@ -231,13 +231,59 @@
   color: #27231e;
 }
 
-.bonding-control-row button {
+.bonding-control-row {
+  display: grid;
+  grid-template-columns: minmax(220px, auto) minmax(280px, 1fr) minmax(260px, auto);
+  gap: 14px;
+  align-items: start;
+}
+
+.bonding-control-group,
+.bonding-slider-control {
+  display: grid;
+  gap: 8px;
+}
+
+.bonding-control-heading,
+.bonding-slider-control > span {
+  color: #4f4943;
+  font-size: 0.78rem;
+  font-weight: 860;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.bonding-slider-control > span {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.bonding-slider-control strong {
+  color: #27231e;
+}
+
+.bonding-button-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.bonding-button-group button {
   flex: 0 1 auto;
+}
+
+.bonding-slider-note {
+  color: #625950;
+  font-size: 0.82rem;
+  font-style: normal;
+  font-weight: 650;
+  line-height: 1.35;
 }
 
 .bonding-readout-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 10px;
 }
 
@@ -264,6 +310,7 @@
   color: #27231e;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 1rem;
+  overflow-wrap: anywhere;
 }
 
 .bonding-readout-card p {
@@ -425,5 +472,15 @@
 
   .guided-going-deeper dl > div {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .bonding-control-row {
+    grid-template-columns: 1fr;
+  }
+
+  .bonding-button-group button {
+    flex: 1 1 160px;
   }
 }
