@@ -39,8 +39,11 @@ describe('guided rest lesson integration', () => {
     expect(lesson.visual).toBe('bonding');
     expect(lesson.stages.map((stage) => stage.id)).toEqual(['in-phase', 'out-of-phase', 'energy-pair']);
     expect(lesson.stages[0]?.lead).toContain('In the last lesson');
+    expect(lesson.stages[0]?.lead).toContain('C=C π bond');
+    expect(lesson.stages[0]?.lead).toContain('equivalent neighboring carbon p orbitals');
+    expect(lesson.stages[0]?.lead).not.toContain('chapter');
     expect(lesson.stages[0]?.lead).toContain('two molecular orbitals');
-    expect(lesson.stages[0]?.lead).toContain('bonding combination');
+    expect(lesson.stages[0]?.lead).toContain('bonding π combination');
     expect(lesson.stages[0]?.equation).toContain('ψ+ = φA + φB');
     expect(lesson.stages[1]?.equation).toContain('|0|²');
     expect(lesson.stages[2]?.equation).toContain('2 AOs -> ψ+ lower + ψ− higher');
@@ -52,6 +55,15 @@ describe('guided rest lesson integration', () => {
   it('keeps purpose copy out of the shared lesson header so step cards carry the explanation', () => {
     const shell = readFileSync(resolve(process.cwd(), 'src/components/LessonShell/LessonShell.tsx'), 'utf8');
     expect(shell).not.toContain('<p>{purpose}</p>');
+    expect(shell).not.toContain('learning-cycle');
+  });
+
+  it('makes the Lesson 3 equation and MO pair interactive instead of static captions', () => {
+    const source = readFileSync(resolve(process.cwd(), 'src/lessons/GuidedOrbitalLesson.tsx'), 'utf8');
+    expect(source).toContain('BondingEquationChooser');
+    expect(source).toContain('Review Lesson 2');
+    expect(source).toContain('Two resulting MOs');
+    expect(source).toContain('well-aligned neighboring p orbitals');
   });
 });
 

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type MouseEvent } from 'react';
 import { AssessmentCard } from '../components/Assessment';
 import { LessonShell } from '../components/LessonShell/LessonShell';
 import { scrollToPageTop } from '../utils/scroll';
@@ -27,6 +27,8 @@ interface ControlState {
   orbitalIndex: number;
   calculationFeature: 'nodes' | 'phase' | 'coefficients';
 }
+
+type SetControlState = (patch: Partial<ControlState>) => void;
 
 const defaultState: ControlState = {
   phase: 'bonding',
@@ -124,7 +126,26 @@ function EnergyLevel({ x1, x2, y, label, occupied = false }: { x1: number; x2: n
   );
 }
 
-function BondingVisual({ state, setState }: { state: ControlState; setState: (patch: Partial<ControlState>) => void }) {
+function BondingEquationChooser({ state, setState }: { state: ControlState; setState: SetControlState }) {
+  const bonding = state.phase === 'bonding';
+  return (
+    <div className="guided-equation-strip guided-equation-strip--interactive" aria-label="Choose the molecular orbital equation to inspect">
+      <div className="guided-equation-options">
+        <button type="button" className={bonding ? 'is-active' : ''} onClick={() => setState({ phase: 'bonding' })}>
+          ψ+ = φA + φB
+        </button>
+        <button type="button" className={!bonding ? 'is-active' : ''} onClick={() => setState({ phase: 'antibonding' })}>
+          ψ− = φA − φB
+        </button>
+      </div>
+      <p>
+        This equation choice controls the bond-center arithmetic, the highlighted MO row, and the selected energy level below.
+      </p>
+    </div>
+  );
+}
+
+function BondingVisual({ state, setState, onReviewPrevious }: { state: ControlState; setState: SetControlState; onReviewPrevious: () => void }) {
   const bonding = state.phase === 'bonding';
   const centerA = 0.6;
   const centerB = bonding ? 0.6 : -0.6;
@@ -137,12 +158,18 @@ function BondingVisual({ state, setState }: { state: ControlState; setState: (pa
   const energyLabel = netEnergy < 0 ? 'net stabilizing' : 'net destabilizing';
   const energyCopy =
     state.bondingElectrons === 2
-      ? 'Two electrons occupy only the lower bonding MO, so the interaction makes a bond.'
-      : 'Four electrons fill both MOs. The antibonding rise is larger, so the filled-filled interaction is repulsive.';
+      ? 'Both MOs exist. Two electrons fill only ψ+, so the filled bonding level makes the interaction stabilizing.'
+      : 'Both MOs exist and both are filled. The ψ− antibonding penalty is larger, so the filled-filled interaction is repulsive.';
   const lowerY = 250 - lowerShift * 62;
   const upperY = 170 - upperShift * 62;
-  const bridgeOpacity = 0.28;
-  const interactionFill = ((state.interaction - 0.18) / (0.95 - 0.18)) * 100;
+  const interactionFraction = clamp((state.interaction - 0.18) / (0.95 - 0.18), 0, 1);
+  const bridgeOpacity = 0.18 + interactionFraction * 0.35;
+  const nodeOpacity = 0.48 + interactionFraction * 0.32;
+  const interactionFill = interactionFraction * 100;
+  const reviewPreviousLesson = (event: MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault();
+    onReviewPrevious();
+  };
   return (
     <div className="guided-visual-block">
       <div className="guided-control-row bonding-control-row" aria-label="Bonding and antibonding controls">
@@ -156,7 +183,7 @@ function BondingVisual({ state, setState }: { state: ControlState; setState: (pa
         <label className="bonding-slider-control">
           <span>interaction strength <strong>{state.interaction.toFixed(2)}</strong></span>
           <input type="range" min="0.18" max="0.95" step="0.01" value={state.interaction} onChange={(event) => setState({ interaction: Number(event.currentTarget.value) })} />
-          <em className="bonding-slider-note">This slider is the input: the chosen teaching-model interaction strength. It is not bond length, not orbital-cloud size, and not a separate gap measurement. A stronger input widens the ψ+/ψ− energy split.</em>
+          <em className="bonding-slider-note">This slider is the input: the teaching-model interaction strength. Strong means well-aligned neighboring p orbitals in a planar C=C π bond; weak means poor overlap, such as p orbitals twisted toward perpendicular. It does not change bond length or orbital-cloud size.</em>
         </label>
         <div className="bonding-control-group">
           <span className="bonding-control-heading">Electron count</span>
@@ -171,7 +198,17 @@ function BondingVisual({ state, setState }: { state: ControlState; setState: (pa
         <div className="bonding-readout-card">
           <span>Fixed bond-center sample</span>
           <strong>{signedDecimal(centerA)} + {signedDecimal(centerB)} = {signedDecimal(centerPsi)}</strong>
-          <p>{bonding ? 'This arithmetic sample tests the signs at one point. It changes when you switch ψ+ and ψ−, not when you move the interaction slider.' : 'This arithmetic sample shows cancellation for ψ−. The slider changes the energy split after this sign pattern is chosen.'}</p>
+          {bonding ? (
+            <p>
+              This is the equal-weight C=C case from Lesson 2: two identical carbon atoms contribute equal p-orbital samples.{' '}
+              <a href="#lesson-2-combine-values" onClick={reviewPreviousLesson}>Review Lesson 2.</a>
+            </p>
+          ) : (
+            <p>
+              The same C=C sample cancels when φB is given the opposite sign.{' '}
+              <a href="#lesson-2-combine-values" onClick={reviewPreviousLesson}>Review Lesson 2.</a>
+            </p>
+          )}
         </div>
         <div className="bonding-readout-card">
           <span>Then square ψ to see density</span>
@@ -181,7 +218,7 @@ function BondingVisual({ state, setState }: { state: ControlState; setState: (pa
         <div className="bonding-readout-card">
           <span>Slider input to energy split</span>
           <strong>energy split = {energySplit.toFixed(2)} teaching units</strong>
-          <p>The interaction value is the cause. A larger input separates ψ+ and ψ− more; it is not a separate gap meter.</p>
+          <p>The interaction value is the cause. A larger input separates ψ+ and ψ− more after the sign pattern is chosen.</p>
         </div>
         <div className={`bonding-readout-card ${netEnergy > 0 ? 'is-destabilizing' : 'is-stabilizing'}`}>
           <span>Electron occupancy decides the consequence</span>
@@ -213,27 +250,29 @@ function BondingVisual({ state, setState }: { state: ControlState; setState: (pa
         <text className="guided-svg-label" x="338" y="207">add ψ values</text>
 
         <rect className="bonding-panel-bg" x="422" y="82" width="215" height="318" rx="18" />
-        <text className="guided-panel-title guided-panel-title--small" x="444" y="118">2. Resulting MO</text>
-        <text className="guided-svg-label" x="444" y="142">{bonding ? 'constructive overlap' : 'destructive overlap'}</text>
-        {bonding ? (
-          <g>
-            <ellipse className="guided-density-bridge" cx="529" cy="230" rx="92" ry="58" style={{ opacity: bridgeOpacity }} />
-            <PiLobes x={485} y={230} signs={[1, -1]} scale={0.78} />
-            <PiLobes x={573} y={230} signs={[1, -1]} scale={0.78} />
-            <text className="bonding-result-label" x="529" y="331">density between nuclei</text>
-          </g>
-        ) : (
-          <g>
-            <PiLobes x={485} y={230} signs={[1, -1]} scale={0.78} />
-            <PiLobes x={573} y={230} signs={[-1, 1]} scale={0.78} />
-            <rect className="guided-node-band" x="523" y="146" width="12" height="170" rx="6" />
-            <text className="bonding-result-label" x="500" y="335">node: ψ = 0</text>
-          </g>
-        )}
-        <line className="guided-bond-axis" x1="455" x2="603" y1="230" y2="230" />
+        <text className="guided-panel-title guided-panel-title--small" x="444" y="118">2. Two resulting MOs</text>
+        <text className="guided-svg-label" x="444" y="142">same pair makes both</text>
+        <g>
+          <rect className={`bonding-mo-row-bg ${bonding ? 'is-selected' : ''}`} x="438" y="154" width="183" height="90" rx="14" />
+          <text className="bonding-result-label" x="452" y="174">ψ+ bonding</text>
+          <ellipse className="guided-density-bridge" cx="529" cy="205" rx="74" ry="31" style={{ opacity: bridgeOpacity }} />
+          <line className="guided-bond-axis" x1="462" x2="596" y1="205" y2="205" />
+          <PiLobes x={490} y={205} signs={[1, -1]} scale={0.48} />
+          <PiLobes x={568} y={205} signs={[1, -1]} scale={0.48} />
+          <text className="guided-svg-label" x="455" y="234">same signs add density</text>
+        </g>
+        <g>
+          <rect className={`bonding-mo-row-bg ${!bonding ? 'is-selected' : ''}`} x="438" y="266" width="183" height="98" rx="14" />
+          <text className="bonding-result-label" x="452" y="286">ψ− antibonding</text>
+          <line className="guided-bond-axis" x1="462" x2="596" y1="319" y2="319" />
+          <PiLobes x={490} y={319} signs={[1, -1]} scale={0.48} />
+          <PiLobes x={568} y={319} signs={[-1, 1]} scale={0.48} />
+          <rect className="guided-node-band" x="523" y="284" width="12" height="70" rx="6" style={{ opacity: nodeOpacity }} />
+          <text className="guided-svg-label" x="455" y="354">opposite signs make a node</text>
+        </g>
 
         <path className="bonding-flow-arrow" d="M 650 230 C 674 230, 690 230, 710 230" />
-        <text className="guided-svg-label" x="666" y="207">fill pair</text>
+        <text className="guided-svg-label" x="666" y="207">occupy levels</text>
 
         <rect className="bonding-panel-bg" x="718" y="82" width="174" height="318" rx="18" />
         <text className="guided-panel-title guided-panel-title--small" x="740" y="118">3. Energy pair</text>
@@ -243,6 +282,7 @@ function BondingVisual({ state, setState }: { state: ControlState; setState: (pa
         <text className="guided-svg-label" x="756" y="218">φA, φB</text>
         <line className="guided-mixing-line" x1="802" x2="844" y1="226" y2={upperY} />
         <line className="guided-mixing-line" x1="802" x2="844" y1="226" y2={lowerY} />
+        <rect className="bonding-selected-energy" x="806" y={(bonding ? lowerY : upperY) - 18} width="68" height="28" rx="14" />
         <EnergyLevel x1={812} x2={862} y={upperY} label="ψ−" occupied={state.bondingElectrons === 4} />
         <EnergyLevel x1={812} x2={862} y={lowerY} label="ψ+" occupied />
         <text className="guided-svg-label" x="740" y="350">slider input</text>
@@ -274,26 +314,27 @@ function BondingVisual({ state, setState }: { state: ControlState; setState: (pa
         <text className="guided-svg-label" x="196" y="302">add ψ</text>
 
         <rect className="bonding-panel-bg" x="18" y="334" width="324" height="205" rx="16" />
-        <text className="guided-panel-title guided-panel-title--small" x="36" y="366">2. Square the result</text>
-        <text className="guided-svg-label" x="36" y="389">|ψ|² = {centerDensity.toFixed(2)}</text>
-        {bonding ? (
-          <g>
-            <ellipse className="guided-density-bridge" cx="180" cy="448" rx="72" ry="50" style={{ opacity: bridgeOpacity }} />
-            <PiLobes x={124} y={448} signs={[1, -1]} scale={0.76} />
-            <PiLobes x={236} y={448} signs={[1, -1]} scale={0.76} />
-            <text className="bonding-result-label" x="180" y="515" textAnchor="middle">density between nuclei</text>
-          </g>
-        ) : (
-          <g>
-            <PiLobes x={124} y={448} signs={[1, -1]} scale={0.76} />
-            <PiLobes x={236} y={448} signs={[-1, 1]} scale={0.76} />
-            <rect className="guided-node-band" x="173" y="380" width="14" height="136" rx="7" />
-            <text className="bonding-result-label" x="180" y="520" textAnchor="middle">node: ψ = 0</text>
-          </g>
-        )}
+        <text className="guided-panel-title guided-panel-title--small" x="36" y="366">2. Compare both MOs</text>
+        <text className="guided-svg-label" x="36" y="389">selected |ψ|² = {centerDensity.toFixed(2)}</text>
+        <g>
+          <rect className={`bonding-mo-row-bg ${bonding ? 'is-selected' : ''}`} x="36" y="402" width="288" height="56" rx="13" />
+          <text className="bonding-result-label" x="52" y="424">ψ+ bonding</text>
+          <ellipse className="guided-density-bridge" cx="218" cy="432" rx="64" ry="21" style={{ opacity: bridgeOpacity }} />
+          <line className="guided-bond-axis" x1="160" x2="276" y1="432" y2="432" />
+          <PiLobes x={180} y={432} signs={[1, -1]} scale={0.34} />
+          <PiLobes x={256} y={432} signs={[1, -1]} scale={0.34} />
+        </g>
+        <g>
+          <rect className={`bonding-mo-row-bg ${!bonding ? 'is-selected' : ''}`} x="36" y="468" width="288" height="56" rx="13" />
+          <text className="bonding-result-label" x="52" y="490">ψ− antibonding</text>
+          <line className="guided-bond-axis" x1="160" x2="276" y1="499" y2="499" />
+          <PiLobes x={180} y={499} signs={[1, -1]} scale={0.34} />
+          <PiLobes x={256} y={499} signs={[-1, 1]} scale={0.34} />
+          <rect className="guided-node-band" x="213" y="475" width="10" height="48" rx="5" style={{ opacity: nodeOpacity }} />
+        </g>
 
         <path className="bonding-flow-arrow" markerEnd="url(#bonding-arrowhead-mobile)" d="M 180 554 C 180 570, 180 584, 180 600" />
-        <text className="guided-svg-label" x="196" y="582">place e−</text>
+        <text className="guided-svg-label" x="196" y="582">occupy levels</text>
 
         <rect className="bonding-panel-bg" x="18" y="614" width="324" height="178" rx="16" />
         <text className="guided-panel-title guided-panel-title--small" x="36" y="646">3. Energy pair</text>
@@ -559,8 +600,18 @@ function CalculationVisual({ state, setState }: { state: ControlState; setState:
   );
 }
 
-function VisualPanel({ visual, state, setState }: { visual: VisualKind; state: ControlState; setState: (patch: Partial<ControlState>) => void }) {
-  if (visual === 'bonding') return <BondingVisual state={state} setState={setState} />;
+function VisualPanel({
+  visual,
+  state,
+  setState,
+  onReviewPrevious,
+}: {
+  visual: VisualKind;
+  state: ControlState;
+  setState: SetControlState;
+  onReviewPrevious: () => void;
+}) {
+  if (visual === 'bonding') return <BondingVisual state={state} setState={setState} onReviewPrevious={onReviewPrevious} />;
   if (visual === 'overlap') return <OverlapVisual state={state} setState={setState} />;
   if (visual === 'energy-gap') return <EnergyGapVisual state={state} setState={setState} />;
   if (visual === 'polarization') return <PolarizationVisual state={state} setState={setState} />;
@@ -639,6 +690,10 @@ export function GuidedOrbitalLesson({ lessonId, ...props }: LessonComponentProps
     previous();
     scrollToPageTop();
   };
+  const reviewPreviousLesson = () => {
+    props.onPrevious();
+    scrollToPageTop();
+  };
 
   const interactionSummary = useMemo(() => interactionSummaryFor(lesson.visual, state), [lesson.visual, state]);
 
@@ -651,7 +706,6 @@ export function GuidedOrbitalLesson({ lessonId, ...props }: LessonComponentProps
       question={lesson.question}
       feedback={feedback}
       showPhaseLegend
-      showLearningCycle
     >
       <div className="guided-rest-lesson">
         <nav className="guided-stage-nav" aria-label="Lesson steps">
@@ -672,13 +726,17 @@ export function GuidedOrbitalLesson({ lessonId, ...props }: LessonComponentProps
           <span>Step {stageIndex + 1} of {lesson.stages.length}</span>
           <h2>{stage.title}</h2>
           <p>{stage.lead}</p>
-          <div className="guided-equation-strip">{stage.equation}</div>
+          {lessonId === 'bonding' && stage.id === 'in-phase' ? (
+            <BondingEquationChooser state={state} setState={setState} />
+          ) : (
+            <div className="guided-equation-strip">{stage.equation}</div>
+          )}
           <p className="guided-correction">Do not read it this way: {stage.correction}</p>
         </section>
 
         <GoingDeeperPanels panels={stage.goingDeeper} />
 
-        <VisualPanel visual={lesson.visual} state={state} setState={setState} />
+        <VisualPanel visual={lesson.visual} state={state} setState={setState} onReviewPrevious={reviewPreviousLesson} />
 
         <AssessmentCard
           meta={props.meta}

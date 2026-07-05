@@ -25,7 +25,6 @@ export function LessonShell({
   children,
   feedback,
   showPhaseLegend = true,
-  showLearningCycle = true,
   onPrevious,
   onNext,
   previousDisabled,
@@ -56,14 +55,6 @@ export function LessonShell({
           <span>Big question</span>
           <p>{question}</p>
         </section>
-      ) : null}
-
-      {showLearningCycle ? (
-        <div className="learning-cycle" aria-label="Lesson cycle">
-          {["Predict", "Change", "Observe", "Explain", "Check"].map((step) => (
-            <span key={step}>{step}</span>
-          ))}
-        </div>
       ) : null}
 
       {children}

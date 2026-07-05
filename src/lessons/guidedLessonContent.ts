@@ -376,7 +376,7 @@ const calculationItems: AssessmentItem[] = [
 export const guidedLessonContent: Record<GuidedRestLessonId, GuidedLessonData> = {
   bonding: {
     id: 'bonding',
-    purpose: 'Use the chapter’s orbital-mixing picture to turn signed addition into bonding, antibonding, nodes, and electron-count consequences.',
+    purpose: 'Use the C=C π bond to turn signed addition into bonding, antibonding, nodes, and electron-count consequences.',
     question: 'When two p orbitals mix, how do the signs at the bond center control density, nodes, and whether the interaction stabilizes the molecule?',
     visual: 'bonding',
     checkpointLead: 'Use the workbench to compare ψ+ and ψ−. Watch the bond-center addition, density readout, node, and energy pair before answering.',
@@ -386,7 +386,7 @@ export const guidedLessonContent: Record<GuidedRestLessonId, GuidedLessonData> =
         id: 'in-phase',
         shortTitle: 'Add signs',
         title: 'The bond center is a signed-addition test',
-        lead: 'In the last lesson, we learned that a molecular orbital is made by combining values from starting orbitals: ψ = cA φA + cB φB. Here we refine that idea into the chapter’s orbital-mixing picture. Start with two neighboring p orbitals, φA and φB. Because there are two starting orbitals, the mixing must produce two molecular orbitals: one same-sign, bonding combination and one opposite-sign, antibonding combination. The quick test is the bond center, the region between the nuclei. If the facing wave amplitudes have the same sign there, the values reinforce and can build density between the atoms. If the facing values have opposite signs there, they cancel at the center and set up the node that identifies the antibonding orbital.',
+        lead: 'In the last lesson, we learned that a molecular orbital is made by combining values from starting orbitals: ψ = cA φA + cB φB. Here we refine that idea into the bonding test for a C=C π bond. Start with two equivalent neighboring carbon p orbitals, φA and φB. Because there are two starting orbitals, the mixing must produce two molecular orbitals: one same-sign bonding π combination and one opposite-sign antibonding π* combination. Equivalent carbon atoms give equal-sized starting contributions in this first case; later lessons will ask what changes when the atoms are not equivalent. The quick test is the bond center, the region between the nuclei. If the facing wave amplitudes have the same sign there, the values reinforce and can build density between the atoms. If the facing values have opposite signs there, they cancel at the center and set up the node that identifies the antibonding orbital.',
         equation: 'ψ+ = φA + φB; ψ− = φA − φB',
         correction: 'Do not read + and − as charge. They are the signs of wave amplitude at the same point in space.',
       },

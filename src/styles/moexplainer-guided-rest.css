@@ -83,6 +83,40 @@
   overflow-wrap: anywhere;
 }
 
+.guided-equation-strip--interactive {
+  display: grid;
+  gap: 10px;
+  font-family: inherit;
+  font-weight: 700;
+}
+
+.guided-equation-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.guided-equation-options button {
+  border-color: #d9d0c2;
+  background: #fffdf8;
+  color: #4a443e;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-weight: 900;
+}
+
+.guided-equation-options button.is-active {
+  border-color: #1f756d;
+  background: #1f756d;
+  color: #fffdf8;
+}
+
+.guided-equation-strip--interactive p {
+  margin: 0;
+  color: #625950;
+  font-size: 0.92rem;
+  line-height: 1.35;
+}
+
 .guided-correction {
   padding: 10px 12px;
   border-left: 4px solid #d7933a;
@@ -319,6 +353,13 @@
   line-height: 1.35;
 }
 
+.bonding-readout-card a {
+  color: #17665f;
+  font-weight: 850;
+  text-decoration-color: rgba(23, 102, 95, 0.45);
+  text-underline-offset: 2px;
+}
+
 .bonding-readout-card.is-stabilizing {
   border-color: rgba(45, 118, 107, 0.42);
   background: #eef7f3;
@@ -347,6 +388,24 @@
   fill: #fff7dd;
   stroke: #d7933a;
   stroke-width: 3;
+}
+
+.bonding-mo-row-bg {
+  fill: rgba(255, 253, 248, 0.78);
+  stroke: rgba(217, 208, 194, 0.92);
+  stroke-width: 1.5;
+}
+
+.bonding-mo-row-bg.is-selected {
+  fill: rgba(31, 117, 109, 0.1);
+  stroke: #1f756d;
+  stroke-width: 2.5;
+}
+
+.bonding-selected-energy {
+  fill: rgba(31, 117, 109, 0.12);
+  stroke: #1f756d;
+  stroke-width: 2;
 }
 
 .bonding-result-label {

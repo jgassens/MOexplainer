@@ -270,21 +270,6 @@ svg {
   font-size: 0.78rem;
 }
 
-.learning-cycle {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.learning-cycle span {
-  padding: 5px 10px;
-  border-radius: 999px;
-  color: var(--accent-strong);
-  background: rgba(36, 107, 98, 0.1);
-  font-size: 0.78rem;
-  font-weight: 800;
-}
-
 .lesson-grid {
   display: grid;
   grid-template-columns: minmax(300px, 410px) minmax(0, 1fr);
