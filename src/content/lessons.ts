@@ -1,14 +1,15 @@
 export type LessonId =
-  | "phase"
-  | "combination"
-  | "bonding"
-  | "overlap"
-  | "energy-gap"
-  | "polarization"
-  | "ethylene-formaldehyde"
-  | "geometry"
-  | "pi-chain"
-  | "calculation";
+  | 'phase'
+  | 'combination'
+  | 'bonding'
+  | 'overlap'
+  | 'energy-gap'
+  | 'polarization'
+  | 'ethylene-formaldehyde'
+  | 'geometry'
+  | 'walsh-geometry'
+  | 'pi-chain'
+  | 'calculation';
 
 export interface LessonMeta {
   id: LessonId;
@@ -19,63 +20,69 @@ export interface LessonMeta {
 
 export const lessons: LessonMeta[] = [
   {
-    id: "phase",
+    id: 'phase',
     number: 1,
-    shortTitle: "Read ψ",
-    title: "What does ψ mean?",
+    shortTitle: 'Read ψ',
+    title: 'What does ψ mean?',
   },
   {
-    id: "combination",
+    id: 'combination',
     number: 2,
-    shortTitle: "Combine values",
-    title: "How two orbitals become one MO",
+    shortTitle: 'Combine values',
+    title: 'How two orbitals become one MO',
   },
   {
-    id: "bonding",
+    id: 'bonding',
     number: 3,
-    shortTitle: "Bond or node",
-    title: "Bonding and antibonding",
+    shortTitle: 'Bond or node',
+    title: 'Bonding and antibonding',
   },
   {
-    id: "overlap",
+    id: 'overlap',
     number: 4,
-    shortTitle: "Overlap",
-    title: "Overlap controls interaction",
+    shortTitle: 'Overlap',
+    title: 'Overlap controls interaction',
   },
   {
-    id: "energy-gap",
+    id: 'energy-gap',
     number: 5,
-    shortTitle: "Energy gap",
-    title: "Starting energy gap",
+    shortTitle: 'Energy gap',
+    title: 'Starting energy gap',
   },
   {
-    id: "polarization",
+    id: 'polarization',
     number: 6,
-    shortTitle: "Polarization",
-    title: "Electronegativity and polarization",
+    shortTitle: 'Polarization',
+    title: 'Electronegativity and polarization',
   },
   {
-    id: "ethylene-formaldehyde",
+    id: 'ethylene-formaldehyde',
     number: 7,
-    shortTitle: "C=C vs C=O",
-    title: "Ethylene and formaldehyde",
+    shortTitle: 'C=C vs C=O',
+    title: 'Ethylene and formaldehyde',
   },
   {
-    id: "geometry",
+    id: 'geometry',
     number: 8,
-    shortTitle: "Geometry",
-    title: "Geometry changes overlap",
+    shortTitle: 'Twist & overlap',
+    title: 'Geometry changes overlap',
   },
   {
-    id: "pi-chain",
+    id: 'walsh-geometry',
     number: 9,
-    shortTitle: "Pi systems",
-    title: "More atoms, more pi orbitals",
+    shortTitle: 'Walsh diagrams',
+    title: 'Geometry and electron count',
   },
   {
-    id: "calculation",
+    id: 'pi-chain',
     number: 10,
-    shortTitle: "Real calculation",
-    title: "Compare with a calculation",
+    shortTitle: 'Pi systems',
+    title: 'More atoms, more pi orbitals',
+  },
+  {
+    id: 'calculation',
+    number: 11,
+    shortTitle: 'Real calculation',
+    title: 'Compare with a calculation',
   },
 ];

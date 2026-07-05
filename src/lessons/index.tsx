@@ -9,9 +9,12 @@ import { OverlapLesson } from './OverlapLesson';
 import { PhaseLesson } from './PhaseLesson';
 import { PiChainLesson } from './PiChainLesson';
 import { PolarizationLesson } from './PolarizationLesson';
+import { WalshGeometryLesson } from './WalshGeometryLesson';
 import type { LessonComponentProps } from './types';
 
-export const lessonComponents: Record<LessonId, (props: LessonComponentProps) => JSX.Element> = {
+type LessonComponent = (props: LessonComponentProps) => JSX.Element;
+
+export const lessonComponents: Record<LessonId, LessonComponent> = {
   phase: PhaseLesson,
   combination: CombinationLesson,
   bonding: BondingLesson,
@@ -20,6 +23,7 @@ export const lessonComponents: Record<LessonId, (props: LessonComponentProps) =>
   polarization: PolarizationLesson,
   'ethylene-formaldehyde': EthyleneFormaldehydeLesson,
   geometry: GeometryLesson,
+  'walsh-geometry': WalshGeometryLesson,
   'pi-chain': PiChainLesson,
   calculation: CalculationLesson,
 };
