@@ -1410,6 +1410,67 @@ export function CombinationLesson(props: LessonComponentProps) {
       ) : null}
     </>
   );
+  const phaseChoicePanel = (
+    <div className="choice-panel">
+      <h3>Choose the relative phase combination</h3>
+      <div
+        className="sign-choice"
+        role="group"
+        aria-label="Relative sign of orbital B"
+      >
+        <button
+          type="button"
+          className={phaseB === 1 ? "is-active" : ""}
+          onClick={() => choosePhase(1)}
+        >
+          ψ+ in-phase: blue + meets blue +
+        </button>
+        <button
+          type="button"
+          className={phaseB === -1 ? "is-active" : ""}
+          onClick={() => choosePhase(-1)}
+        >
+          ψ− out-of-phase: blue + meets orange −
+        </button>
+      </div>
+      <p className="choice-panel__consequence">
+        {phaseChoiceConsequence}
+      </p>
+    </div>
+  );
+  const coefficientPanel = stage.id === "weights" ? (
+    <div className="weight-panel">
+      <label htmlFor="weight-b">
+        <span>O-side coefficient cO, with carbon fixed at cC = 1.00</span>
+        <strong>{weightB.toFixed(2)}</strong>
+      </label>
+      <input
+        id="weight-b"
+        type="range"
+        min="0.2"
+        max="1.5"
+        step="0.05"
+        value={weightB}
+        onChange={(event) => setWeightB(Number(event.target.value))}
+      />
+      <div className="weight-presets" aria-label="Weight presets">
+        <button type="button" onClick={() => setWeightB(0.65)}>
+          More C
+        </button>
+        <button type="button" onClick={() => setWeightB(1)}>
+          Equal
+        </button>
+        <button type="button" onClick={() => setWeightB(1.35)}>
+          More O
+        </button>
+      </div>
+      <p className="weight-panel__note">
+        In C=C, equal carbon p-orbital weights are a useful first model. In C=O,
+        oxygen contributes more to the bonding π MO while carbon contributes
+        more to π*.
+      </p>
+    </div>
+  ) : null;
   const stageControlPanel = (
     <div
       className={`stage-control-panel stage-control-panel--${stage.id}`}
@@ -1419,66 +1480,7 @@ export function CombinationLesson(props: LessonComponentProps) {
         {stageEquation}
       </div>
 
-      <div className="choice-panel">
-        <h3>Choose the relative phase combination</h3>
-        <div
-          className="sign-choice"
-          role="group"
-          aria-label="Relative sign of orbital B"
-        >
-          <button
-            type="button"
-            className={phaseB === 1 ? "is-active" : ""}
-            onClick={() => choosePhase(1)}
-          >
-            ψ+ in-phase: blue + meets blue +
-          </button>
-          <button
-            type="button"
-            className={phaseB === -1 ? "is-active" : ""}
-            onClick={() => choosePhase(-1)}
-          >
-            ψ− out-of-phase: blue + meets orange −
-          </button>
-        </div>
-        <p className="choice-panel__consequence">
-          {phaseChoiceConsequence}
-        </p>
-      </div>
-
-      {stage.id === "weights" ? (
-        <div className="weight-panel">
-          <label htmlFor="weight-b">
-            <span>O-side coefficient cO, with carbon fixed at cC = 1.00</span>
-            <strong>{weightB.toFixed(2)}</strong>
-          </label>
-          <input
-            id="weight-b"
-            type="range"
-            min="0.2"
-            max="1.5"
-            step="0.05"
-            value={weightB}
-            onChange={(event) => setWeightB(Number(event.target.value))}
-          />
-          <div className="weight-presets" aria-label="Weight presets">
-            <button type="button" onClick={() => setWeightB(0.65)}>
-              More C
-            </button>
-            <button type="button" onClick={() => setWeightB(1)}>
-              Equal
-            </button>
-            <button type="button" onClick={() => setWeightB(1.35)}>
-              More O
-            </button>
-          </div>
-          <p className="weight-panel__note">
-            In C=C, equal carbon p-orbital weights are a useful first model. In
-            C=O, oxygen contributes more to the bonding π MO while carbon
-            contributes more to π*.
-          </p>
-        </div>
-      ) : null}
+      {stage.id === "weights" ? coefficientPanel : phaseChoicePanel}
     </div>
   );
 
@@ -1549,13 +1551,13 @@ export function CombinationLesson(props: LessonComponentProps) {
                       weightB={weightB}
                       phaseB={phaseB}
                     />
+                    <aside className="concept-correction concept-correction--visual">
+                      <strong>This is one local sample</strong>
+                      <p>{pointArithmeticExplanation}</p>
+                    </aside>
                   </div>
                   {stageControlPanel}
                 </div>
-                <aside className="concept-correction concept-correction--visual">
-                  <strong>This is one local sample</strong>
-                  <p>{pointArithmeticExplanation}</p>
-                </aside>
               </div>
             ) : null}
 
@@ -1577,6 +1579,9 @@ export function CombinationLesson(props: LessonComponentProps) {
                 <div className="stage-workspace stage-workspace--weights">
                   <CarbonylWeightsDiagram phaseB={phaseB} />
                   {stageControlPanel}
+                </div>
+                <div className="stage-secondary-control">
+                  {phaseChoicePanel}
                 </div>
               </div>
             ) : null}

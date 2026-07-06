@@ -617,6 +617,10 @@
   font-size: clamp(0.96rem, 1.35vw, 1.16rem);
 }
 
+.stage-secondary-control {
+  min-width: 0;
+}
+
 .choice-panel,
 .weight-panel {
   display: grid;
