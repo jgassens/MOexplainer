@@ -1311,7 +1311,8 @@ export function PhaseLesson(props: LessonComponentProps) {
             <NoticeCard feedback={feedback} />
           </>
         ) : (
-          <>
+          <div className="psi-workspace">
+            <div className="psi-workspace__visual">
             <div className="psi-visual-grid">
               <section className="psi-plot-card">
                 <FunctionPlot probeY={probeY} stage={stage.id} overallSign={overallSign} />
@@ -1325,7 +1326,9 @@ export function PhaseLesson(props: LessonComponentProps) {
                 </p>
               </section>
             </div>
+            </div>
 
+            <div className="psi-workspace__controls">
             <section className="psi-probe-controls" aria-label="Orbital probe controls">
               <div className="psi-slider-row">
                 <label htmlFor="psi-probe-y">
@@ -1414,7 +1417,8 @@ export function PhaseLesson(props: LessonComponentProps) {
                 <p>Relative density in this scaled teaching model.</p>
               </button>
             </section>
-          </>
+            </div>
+          </div>
         )}
 
         <details className="psi-going-deeper">
