@@ -41,8 +41,8 @@ const stages: readonly StageCopy[] = [
   {
     id: "read",
     shortTitle: "Read ψ",
-    title: "ψ is a signed wave amplitude—not a probability",
-    lead: "Every point in 3D space has coordinates (x, y, z). The orbital function ψ(x, y, z) assigns one signed amplitude to that point. In this lesson, we are only walking along the y-axis of a pᵧ orbital, so x = 0 and z = 0 here. You will explore the full 3D dataset in the final step. The sign of ψ tells phase. Relative phase matters when orbitals combine. The size of ψ tells amplitude. Electron density comes from |ψ|², not from ψ itself.",
+    title: "Start with one atomic orbital: ψ is a signed wave amplitude",
+    lead: "An atomic orbital is a wavefunction for an electron around one atom. Every point in 3D space has coordinates (x, y, z), and the orbital function ψ(x, y, z) assigns one signed amplitude to that point. In this lesson, we use one pᵧ atomic orbital and first walk along its y-axis, so x = 0 and z = 0 here. You will explore the full 3D dataset in the final step. The sign of ψ tells phase. Relative phase matters when atomic orbitals combine to make molecular orbitals. The size of ψ tells amplitude. Electron density comes from |ψ|², not from ψ itself.",
     equation: "point (x, y, z)  →  ψ(x, y, z)",
     correction:
       "The +1 and −1 values on this page are scaled teaching values. They mean equal amplitude with opposite phase. They do not mean +100% and −100% probability.",
@@ -730,8 +730,8 @@ const primerBridgeSegments: PrimerBridgeSegment[] = [
   {
     type: "card",
     symbol: "ψ",
-    title: "Wavefunction",
-    body: "ψ, pronounced “sigh,” is the wavefunction. For an orbital, ψ is the mathematical function behind the picture. At each point in space, it gives one signed value. The sign tells phase, and the size tells amplitude. Start here because orbitals combine by adding ψ values point by point, which later explains nodes, bonding, and antibonding.",
+    title: "Atomic orbital wavefunction",
+    body: "ψ, pronounced “sigh,” is the wavefunction. For this first lesson, ψ describes one atomic orbital: the mathematical function behind the pᵧ picture. At each point in space, it gives one signed value. The sign tells phase, and the size tells amplitude. Start here because molecular orbitals are made by combining two or more atomic orbitals, adding their ψ values point by point. That later explains nodes, bonding, and antibonding.",
   },
   {
     type: "arrow",
@@ -1055,7 +1055,7 @@ function OrbitalCartoon({
 
       <rect x="10" y="10" width="420" height="230" rx="18" className="psi-svg-frame" />
       <text x="24" y="38" className="psi-svg-title">
-        Textbook orientation: pᵧ orbital
+        One atomic pᵧ orbital
       </text>
       <text x="416" y="38" textAnchor="end" className="psi-svg-note">
         lobes lie on ±y
@@ -1241,7 +1241,7 @@ export function PhaseLesson(props: LessonComponentProps) {
     <LessonShell
       {...props}
       purpose="Learn the distinction that makes orbital pictures readable: ψ is a signed wave amplitude, while |ψ|² is probability density."
-      question="At one point in a pᵧ orbital, what do the number and sign of ψ actually mean?"
+      question="At one point in a pᵧ atomic orbital, what do the number and sign of ψ actually mean?"
       feedback={feedback}
       showLearningCycle={false}
       onPrevious={previous}
@@ -1279,8 +1279,9 @@ export function PhaseLesson(props: LessonComponentProps) {
                   ψ is the input for prediction. Its size tells where electron
                   density can appear after squaring it. Its sign tells phase, so
                   matching signs add and opposite signs cancel. You will learn
-                  more about this in the next lesson, but that is why ψ, not
-                  just |ψ|², controls nodes, bonding, and antibonding.
+                  more about this in the next lesson, where two atomic orbitals
+                  combine to make molecular orbitals. That is why ψ, not just
+                  |ψ|², controls nodes, bonding, and antibonding.
                 </p>
               </aside>
             ) : null}
