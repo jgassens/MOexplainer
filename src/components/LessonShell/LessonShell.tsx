@@ -10,7 +10,6 @@ interface LessonShellProps {
   purpose: string;
   question?: string;
   children: ReactNode;
-  feedback: string;
   showPhaseLegend?: boolean;
   showLearningCycle?: boolean;
   onPrevious: () => void;
@@ -23,7 +22,6 @@ export function LessonShell({
   meta,
   question,
   children,
-  feedback,
   showPhaseLegend = true,
   onPrevious,
   onNext,
@@ -58,11 +56,6 @@ export function LessonShell({
       ) : null}
 
       {children}
-
-      <section className="notice-card" aria-live="polite">
-        <h3>What to notice</h3>
-        <p>{feedback}</p>
-      </section>
 
       <ObservationBox lessonId={meta.id} />
 

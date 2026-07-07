@@ -1,5 +1,6 @@
 import { useEffect, useId, useMemo, useState, type ReactNode } from "react";
 import { LessonShell } from "../../components/LessonShell/LessonShell";
+import { NoticeCard } from "../../components/LessonShell/NoticeCard";
 import { scrollToPageTop } from "../../utils/scroll";
 import type { LessonComponentProps } from "../types";
 
@@ -1489,7 +1490,6 @@ export function CombinationLesson(props: LessonComponentProps) {
       meta={props.meta}
       purpose="Use the π part of a C=C bond as the concrete example: two neighboring p orbitals combine to make a bonding π MO or an antibonding π* MO."
       question="For the π part of a C=C or C=O bond, why does same-phase overlap build electron density while opposite-phase overlap creates a node?"
-      feedback={feedback}
       showLearningCycle={false}
       onPrevious={previous}
       onNext={next}
@@ -1585,6 +1585,8 @@ export function CombinationLesson(props: LessonComponentProps) {
                 </div>
               </div>
             ) : null}
+
+            <NoticeCard feedback={feedback} />
 
             <div className="combination-equation-focus">
               <CombinationEquationWorkbench

@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { LessonShell } from "../../components/LessonShell/LessonShell";
+import { NoticeCard } from "../../components/LessonShell/NoticeCard";
 import { OrbitalWavefunctionLabel } from "../../components/orbital3d/OrbitalNotation";
 import {
   formatSigned,
@@ -1242,7 +1243,6 @@ export function PhaseLesson(props: LessonComponentProps) {
       {...props}
       purpose="Learn the distinction that makes orbital pictures readable: ψ is a signed wave amplitude, while |ψ|² is probability density."
       question="At one point in a pᵧ atomic orbital, what do the number and sign of ψ actually mean?"
-      feedback={feedback}
       showLearningCycle={false}
       onPrevious={previous}
       onNext={next}
@@ -1293,20 +1293,23 @@ export function PhaseLesson(props: LessonComponentProps) {
         </section>
 
         {stage.id === "probability3d" ? (
-          <Suspense
-            fallback={
-              <div className="orbital3d-loading" role="status">
-                Loading the 3D probability explorer…
-              </div>
-            }
-          >
-            <LazyPyOrbitalExplorer
-              alpha={alpha}
-              globalPhase={overallSign}
-              onAlphaChange={setAlpha}
-              onGlobalPhaseChange={setOverallSign}
-            />
-          </Suspense>
+          <>
+            <Suspense
+              fallback={
+                <div className="orbital3d-loading" role="status">
+                  Loading the 3D probability explorer…
+                </div>
+              }
+            >
+              <LazyPyOrbitalExplorer
+                alpha={alpha}
+                globalPhase={overallSign}
+                onAlphaChange={setAlpha}
+                onGlobalPhaseChange={setOverallSign}
+              />
+            </Suspense>
+            <NoticeCard feedback={feedback} />
+          </>
         ) : (
           <>
             <div className="psi-visual-grid">
@@ -1356,6 +1359,8 @@ export function PhaseLesson(props: LessonComponentProps) {
                 <PhaseSignToggle overallSign={overallSign} onChange={setOverallSign} />
               ) : null}
             </section>
+
+            <NoticeCard feedback={feedback} />
 
             <EquationWorkbench
               activeReadout={activeReadout}

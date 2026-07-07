@@ -1,6 +1,7 @@
-import { useMemo, useState, type MouseEvent } from 'react';
+import { useMemo, useState, type MouseEvent, type ReactNode } from 'react';
 import { AssessmentCard } from '../components/Assessment';
 import { LessonShell } from '../components/LessonShell/LessonShell';
+import { NoticeCard } from '../components/LessonShell/NoticeCard';
 import { scrollToPageTop } from '../utils/scroll';
 import '../styles/moexplainer-guided-rest.css';
 import type { LessonComponentProps } from './types';
@@ -696,6 +697,31 @@ function interactionSummaryFor(visual: VisualKind, state: ControlState): string 
   return `comparisonFeature=${state.calculationFeature}`;
 }
 
+function AssessmentDisclosure({
+  kind,
+  title,
+  itemCount,
+  children,
+}: {
+  kind: string;
+  title: string;
+  itemCount: number;
+  children: ReactNode;
+}) {
+  return (
+    <details className="guided-assessment-disclosure">
+      <summary>
+        <span className="guided-assessment-disclosure__kind">{kind}</span>
+        <span className="guided-assessment-disclosure__title">{title}</span>
+        <span className="guided-assessment-disclosure__meta">
+          {itemCount} question{itemCount === 1 ? '' : 's'}
+        </span>
+      </summary>
+      <div className="guided-assessment-disclosure__body">{children}</div>
+    </details>
+  );
+}
+
 function GoingDeeperPanels({ panels }: { panels?: GoingDeeperPanelData[] }) {
   if (!panels?.length) return null;
   return (
@@ -766,7 +792,6 @@ export function GuidedOrbitalLesson({ lessonId, ...props }: LessonComponentProps
       {...props}
       purpose={lesson.purpose}
       question={lesson.question}
-      feedback={feedback}
       showPhaseLegend
     >
       <div className="guided-rest-lesson">
@@ -800,15 +825,23 @@ export function GuidedOrbitalLesson({ lessonId, ...props }: LessonComponentProps
 
         <VisualPanel visual={lesson.visual} state={state} setState={setState} onReviewPrevious={reviewPreviousLesson} />
 
-        <AssessmentCard
-          meta={props.meta}
-          mode="practice"
-          sectionId="checkpoint"
-          sectionTitle="Embedded checkpoint"
-          sectionLead={lesson.checkpointLead}
-          items={lesson.checkpoints}
-          interactionSummary={interactionSummary}
-        />
+        <NoticeCard feedback={feedback} />
+
+        <AssessmentDisclosure
+          kind="Practice"
+          title="Embedded checkpoint"
+          itemCount={lesson.checkpoints.length}
+        >
+          <AssessmentCard
+            meta={props.meta}
+            mode="practice"
+            sectionId="checkpoint"
+            sectionTitle="Embedded checkpoint"
+            sectionLead={lesson.checkpointLead}
+            items={lesson.checkpoints}
+            interactionSummary={interactionSummary}
+          />
+        </AssessmentDisclosure>
 
         <section className="guided-explain-card">
           <h3>Explain the screen before moving on</h3>
@@ -817,15 +850,21 @@ export function GuidedOrbitalLesson({ lessonId, ...props }: LessonComponentProps
           </p>
         </section>
 
-        <AssessmentCard
-          meta={props.meta}
-          mode="graded"
-          sectionId="end-of-lesson"
-          sectionTitle="End-of-lesson submitted assessment"
-          sectionLead={lesson.endLead}
-          items={lesson.endItems}
-          interactionSummary={interactionSummary}
-        />
+        <AssessmentDisclosure
+          kind="Graded"
+          title="End-of-lesson submitted assessment"
+          itemCount={lesson.endItems.length}
+        >
+          <AssessmentCard
+            meta={props.meta}
+            mode="graded"
+            sectionId="end-of-lesson"
+            sectionTitle="End-of-lesson submitted assessment"
+            sectionLead={lesson.endLead}
+            items={lesson.endItems}
+            interactionSummary={interactionSummary}
+          />
+        </AssessmentDisclosure>
 
         <div className="guided-bottom-nav">
           <button type="button" onClick={previousFromBottom}>{atFirstStage ? 'Previous lesson' : 'Back one idea'}</button>
