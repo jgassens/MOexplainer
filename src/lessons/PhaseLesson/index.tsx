@@ -1312,111 +1312,111 @@ export function PhaseLesson(props: LessonComponentProps) {
           </>
         ) : (
           <div className="psi-workspace">
-            <div className="psi-workspace__visual">
-            <div className="psi-visual-grid">
-              <section className="psi-plot-card">
-                <FunctionPlot probeY={probeY} stage={stage.id} overallSign={overallSign} />
+            <div className="psi-workspace__bar">
+              <section className="psi-probe-controls" aria-label="Orbital probe controls">
+                <div className="psi-slider-row">
+                  <label htmlFor="psi-probe-y">
+                    Move the probe along the pᵧ lobe axis
+                    <span>y = {probeY.toFixed(2)}</span>
+                  </label>
+                  <input
+                    id="psi-probe-y"
+                    type="range"
+                    min={Y_MIN}
+                    max={Y_MAX}
+                    step="0.05"
+                    value={probeY}
+                    onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                      setProbeY(Number(event.target.value))
+                    }
+                  />
+                </div>
+                <div className="psi-preset-buttons" aria-label="Probe position presets">
+                  <button type="button" onClick={() => setProbeY(-1)}>
+                    −y lobe
+                  </button>
+                  <button type="button" onClick={() => setProbeY(0)}>
+                    node
+                  </button>
+                  <button type="button" onClick={() => setProbeY(1)}>
+                    +y lobe
+                  </button>
+                </div>
+                {showPhaseConventionToggle ? (
+                  <PhaseSignToggle overallSign={overallSign} onChange={setOverallSign} />
+                ) : null}
               </section>
-              <section className="psi-orbital-card">
-                <OrbitalCartoon probeY={probeY} overallSign={overallSign} />
-                <p>
-                  This is a conventional contour-style cartoon. The lobe
-                  surfaces are not hard boundaries; they show where the orbital
-                  amplitude is large enough to draw.
-                </p>
+
+              <NoticeCard feedback={feedback} />
+            </div>
+
+            <div className="psi-workspace__views">
+              <div className="psi-visual-grid">
+                <section className="psi-plot-card">
+                  <FunctionPlot probeY={probeY} stage={stage.id} overallSign={overallSign} />
+                </section>
+                <section className="psi-orbital-card">
+                  <OrbitalCartoon probeY={probeY} overallSign={overallSign} />
+                  <p>
+                    This is a conventional contour-style cartoon. The lobe
+                    surfaces are not hard boundaries; they show where the orbital
+                    amplitude is large enough to draw.
+                  </p>
+                </section>
+              </div>
+
+              <EquationWorkbench
+                activeReadout={activeReadout}
+                density={density}
+                magnitude={magnitude}
+                overallSign={overallSign}
+                psi={psi}
+                probeY={probeY}
+                stageId={stage.id}
+              />
+
+              <section className="psi-readout-grid" aria-label="Values at the selected point">
+                <button
+                  type="button"
+                  className={`psi-readout-card${activeReadout === "location" ? " is-emphasized" : ""}`}
+                  onClick={() => setActiveReadout("location")}
+                  aria-pressed={activeReadout === "location"}
+                >
+                  <span>Location</span>
+                  <strong>y = {probeY.toFixed(2)}</strong>
+                  <p>One point on the horizontal y axis.</p>
+                </button>
+                <button
+                  type="button"
+                  className={`psi-readout-card${activeReadout === "amplitude" ? " is-emphasized" : ""}`}
+                  onClick={() => setActiveReadout("amplitude")}
+                  aria-pressed={activeReadout === "amplitude"}
+                >
+                  <span>Wave amplitude</span>
+                  <strong>ψ = {formatSigned(psi)}</strong>
+                  <p>Signed and scaled. This is not probability.</p>
+                </button>
+                <button
+                  type="button"
+                  className={`psi-readout-card${activeReadout === "magnitude" ? " is-emphasized" : ""}`}
+                  onClick={() => setActiveReadout("magnitude")}
+                  aria-pressed={activeReadout === "magnitude"}
+                >
+                  <span>Size of ψ</span>
+                  <strong>|ψ| = {magnitude.toFixed(2)}</strong>
+                  <p>How much amplitude is present before squaring.</p>
+                </button>
+                <button
+                  type="button"
+                  className={`psi-readout-card${activeReadout === "density" ? " is-emphasized" : ""}`}
+                  onClick={() => setActiveReadout("density")}
+                  aria-pressed={activeReadout === "density"}
+                >
+                  <span>Probability density</span>
+                  <strong>|ψ|² = {density.toFixed(2)}</strong>
+                  <p>Relative density in this scaled teaching model.</p>
+                </button>
               </section>
-            </div>
-            </div>
-
-            <div className="psi-workspace__controls">
-            <section className="psi-probe-controls" aria-label="Orbital probe controls">
-              <div className="psi-slider-row">
-                <label htmlFor="psi-probe-y">
-                  Move the probe along the pᵧ lobe axis
-                  <span>y = {probeY.toFixed(2)}</span>
-                </label>
-                <input
-                  id="psi-probe-y"
-                  type="range"
-                  min={Y_MIN}
-                  max={Y_MAX}
-                  step="0.05"
-                  value={probeY}
-                  onChange={(event: ChangeEvent<HTMLInputElement>) =>
-                    setProbeY(Number(event.target.value))
-                  }
-                />
-              </div>
-              <div className="psi-preset-buttons" aria-label="Probe position presets">
-                <button type="button" onClick={() => setProbeY(-1)}>
-                  −y lobe
-                </button>
-                <button type="button" onClick={() => setProbeY(0)}>
-                  node
-                </button>
-                <button type="button" onClick={() => setProbeY(1)}>
-                  +y lobe
-                </button>
-              </div>
-              {showPhaseConventionToggle ? (
-                <PhaseSignToggle overallSign={overallSign} onChange={setOverallSign} />
-              ) : null}
-            </section>
-
-            <NoticeCard feedback={feedback} />
-
-            <EquationWorkbench
-              activeReadout={activeReadout}
-              density={density}
-              magnitude={magnitude}
-              overallSign={overallSign}
-              psi={psi}
-              probeY={probeY}
-              stageId={stage.id}
-            />
-
-            <section className="psi-readout-grid" aria-label="Values at the selected point">
-              <button
-                type="button"
-                className={`psi-readout-card${activeReadout === "location" ? " is-emphasized" : ""}`}
-                onClick={() => setActiveReadout("location")}
-                aria-pressed={activeReadout === "location"}
-              >
-                <span>Location</span>
-                <strong>y = {probeY.toFixed(2)}</strong>
-                <p>One point on the horizontal y axis.</p>
-              </button>
-              <button
-                type="button"
-                className={`psi-readout-card${activeReadout === "amplitude" ? " is-emphasized" : ""}`}
-                onClick={() => setActiveReadout("amplitude")}
-                aria-pressed={activeReadout === "amplitude"}
-              >
-                <span>Wave amplitude</span>
-                <strong>ψ = {formatSigned(psi)}</strong>
-                <p>Signed and scaled. This is not probability.</p>
-              </button>
-              <button
-                type="button"
-                className={`psi-readout-card${activeReadout === "magnitude" ? " is-emphasized" : ""}`}
-                onClick={() => setActiveReadout("magnitude")}
-                aria-pressed={activeReadout === "magnitude"}
-              >
-                <span>Size of ψ</span>
-                <strong>|ψ| = {magnitude.toFixed(2)}</strong>
-                <p>How much amplitude is present before squaring.</p>
-              </button>
-              <button
-                type="button"
-                className={`psi-readout-card${activeReadout === "density" ? " is-emphasized" : ""}`}
-                onClick={() => setActiveReadout("density")}
-                aria-pressed={activeReadout === "density"}
-              >
-                <span>Probability density</span>
-                <strong>|ψ|² = {density.toFixed(2)}</strong>
-                <p>Relative density in this scaled teaching model.</p>
-              </button>
-            </section>
             </div>
           </div>
         )}
