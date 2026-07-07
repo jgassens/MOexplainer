@@ -642,3 +642,41 @@
   border-top: 1px solid #ece2d3;
   background: transparent;
 }
+
+.guided-workspace {
+  display: grid;
+  gap: 20px;
+}
+
+.guided-workspace__side {
+  min-width: 0;
+}
+
+.guided-workspace__sticky,
+.guided-workspace__main {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+
+@media (min-width: 1100px) {
+  .guided-workspace {
+    grid-template-columns: minmax(0, 0.94fr) minmax(0, 1.06fr);
+  }
+
+  .guided-workspace__main {
+    grid-column: 1;
+    grid-row: 1;
+    align-content: start;
+  }
+
+  .guided-workspace__side {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .guided-workspace__sticky {
+    position: sticky;
+    top: 16px;
+  }
+}

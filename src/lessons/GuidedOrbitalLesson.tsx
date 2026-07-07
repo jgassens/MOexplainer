@@ -823,53 +823,61 @@ export function GuidedOrbitalLesson({ lessonId, ...props }: LessonComponentProps
 
         <GoingDeeperPanels panels={stage.goingDeeper} />
 
-        <VisualPanel visual={lesson.visual} state={state} setState={setState} onReviewPrevious={reviewPreviousLesson} />
+        <div className="guided-workspace">
+          <div className="guided-workspace__side">
+            <div className="guided-workspace__sticky">
+              <VisualPanel visual={lesson.visual} state={state} setState={setState} onReviewPrevious={reviewPreviousLesson} />
 
-        <NoticeCard feedback={feedback} />
+              <NoticeCard feedback={feedback} />
+            </div>
+          </div>
 
-        <AssessmentDisclosure
-          kind="Practice"
-          title="Embedded checkpoint"
-          itemCount={lesson.checkpoints.length}
-        >
-          <AssessmentCard
-            meta={props.meta}
-            mode="practice"
-            sectionId="checkpoint"
-            sectionTitle="Embedded checkpoint"
-            sectionLead={lesson.checkpointLead}
-            items={lesson.checkpoints}
-            interactionSummary={interactionSummary}
-          />
-        </AssessmentDisclosure>
+          <div className="guided-workspace__main">
+            <AssessmentDisclosure
+              kind="Practice"
+              title="Embedded checkpoint"
+              itemCount={lesson.checkpoints.length}
+            >
+              <AssessmentCard
+                meta={props.meta}
+                mode="practice"
+                sectionId="checkpoint"
+                sectionTitle="Embedded checkpoint"
+                sectionLead={lesson.checkpointLead}
+                items={lesson.checkpoints}
+                interactionSummary={interactionSummary}
+              />
+            </AssessmentDisclosure>
 
-        <section className="guided-explain-card">
-          <h3>Explain the screen before moving on</h3>
-          <p>
-            Write one sentence that links what you changed to what happened in the orbital picture. Then write one sentence that states the chemical consequence. This is the bridge from manipulation to understanding.
-          </p>
-        </section>
+            <section className="guided-explain-card">
+              <h3>Explain the screen before moving on</h3>
+              <p>
+                Write one sentence that links what you changed to what happened in the orbital picture. Then write one sentence that states the chemical consequence. This is the bridge from manipulation to understanding.
+              </p>
+            </section>
 
-        <AssessmentDisclosure
-          kind="Graded"
-          title="End-of-lesson submitted assessment"
-          itemCount={lesson.endItems.length}
-        >
-          <AssessmentCard
-            meta={props.meta}
-            mode="graded"
-            sectionId="end-of-lesson"
-            sectionTitle="End-of-lesson submitted assessment"
-            sectionLead={lesson.endLead}
-            items={lesson.endItems}
-            interactionSummary={interactionSummary}
-          />
-        </AssessmentDisclosure>
+            <AssessmentDisclosure
+              kind="Graded"
+              title="End-of-lesson submitted assessment"
+              itemCount={lesson.endItems.length}
+            >
+              <AssessmentCard
+                meta={props.meta}
+                mode="graded"
+                sectionId="end-of-lesson"
+                sectionTitle="End-of-lesson submitted assessment"
+                sectionLead={lesson.endLead}
+                items={lesson.endItems}
+                interactionSummary={interactionSummary}
+              />
+            </AssessmentDisclosure>
 
-        <div className="guided-bottom-nav">
-          <button type="button" onClick={previousFromBottom}>{atFirstStage ? 'Previous lesson' : 'Back one idea'}</button>
-          <span>Step {stageIndex + 1} of {lesson.stages.length}</span>
-          <button type="button" onClick={nextFromBottom}>{atLastStage ? 'Next lesson' : 'Continue'}</button>
+            <div className="guided-bottom-nav">
+              <button type="button" onClick={previousFromBottom}>{atFirstStage ? 'Previous lesson' : 'Back one idea'}</button>
+              <span>Step {stageIndex + 1} of {lesson.stages.length}</span>
+              <button type="button" onClick={nextFromBottom}>{atLastStage ? 'Next lesson' : 'Continue'}</button>
+            </div>
+          </div>
         </div>
       </div>
     </LessonShell>
