@@ -76,13 +76,28 @@ describe("Lesson 1 probability in 3D step", () => {
   it("introduces wavefunction, density, and regional probability in the primer bridge", () => {
     const target = renderLesson();
 
-    expect(target.textContent).toContain("Wavefunction");
+    expect(target.textContent).toContain("Atomic orbital wavefunction");
+    expect(target.textContent).toContain("one atomic orbital");
+    expect(target.textContent).toContain(
+      "molecular orbitals are made by combining two or more atomic orbitals",
+    );
     expect(target.textContent).toContain("SQUARE IT →");
     expect(target.textContent).toContain("Probability density");
     expect(target.textContent).toContain("INTEGRATE IT →");
     expect(target.textContent).toContain("Probability in a region");
     expect(target.textContent).toContain("|ψ|² is density at a point");
     expect(target.textContent).toContain("probability in a region");
+  });
+
+  it("frames the first screen as one atomic orbital before molecular orbitals", () => {
+    const target = renderLesson();
+
+    expect(target.textContent).toContain("Start with one atomic orbital");
+    expect(target.textContent).toContain("An atomic orbital is a wavefunction");
+    expect(target.textContent).toContain(
+      "where two atomic orbitals combine to make molecular orbitals",
+    );
+    expect(target.textContent).toContain("One atomic pᵧ orbital");
   });
 
   it("lets the Read psi step switch the global phase convention in the equation and images", async () => {

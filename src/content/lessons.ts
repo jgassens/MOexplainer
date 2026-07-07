@@ -23,7 +23,7 @@ export const lessons: LessonMeta[] = [
     id: 'phase',
     number: 1,
     shortTitle: 'Read ψ',
-    title: 'What does ψ mean?',
+    title: 'What does one atomic orbital mean?',
   },
   {
     id: 'combination',
