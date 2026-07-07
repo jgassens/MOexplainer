@@ -15,7 +15,6 @@
     "@react-three/drei": "^9.122.0",
     "@react-three/fiber": "^8.18.0",
     "@stdlib/math-base-special-erf": "^0.2.6",
-    "@vitejs/plugin-react": "^5.0.0",
     "katex": "^0.16.22",
     "lucide-react": "^0.468.0",
     "react": "^18.3.1",
@@ -27,6 +26,7 @@
     "@types/node": "^22.10.5",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^5.0.0",
     "eslint": "^9.18.0",
     "eslint-plugin-react-hooks": "^5.1.0",
     "eslint-plugin-react-refresh": "^0.4.16",
@@ -38,5 +38,8 @@
     "vite": "^6.0.7",
     "vite-plugin-react-inspector": "^0.3.3",
     "vitest": "^2.1.8"
+  },
+  "overrides": {
+    "three": "$three"
   }
 }
