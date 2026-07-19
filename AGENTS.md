@@ -1,10 +1,19 @@
 # Repository Guidance
 
+## Git Workflow
+
+This is a small single-developer website. All work goes directly on `main`.
+
+- Do not create branches. Do not open pull requests. Commit straight to `main`.
+- `main` is the only branch. If a stray branch appears, merge it into `main` and delete it.
+- Keep `main` green: run linting, Vitest, and the production build before pushing.
+- Pushing `main` deploys to GitHub Pages, so only push work that has been verified.
+
 ## Local Signing Notes
 
 Notary and app signing instructions live outside this repository at:
 
-`/Users/jeremiahgassensmith/Documents/programming/.notary`
+`/Users/jeremiahgassensmith/programming/.notary`
 
 Read that directory before any future notarization, app-signing, DMG, or release-packaging work.
 
