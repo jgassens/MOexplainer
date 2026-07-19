@@ -1705,3 +1705,47 @@
     text-align: center;
   }
 }
+
+.psi-workspace {
+  display: block;
+}
+
+.psi-workspace__views {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+}
+
+.psi-workspace__bar {
+  margin-bottom: 18px;
+  display: grid;
+  gap: 12px 20px;
+  padding: 12px 16px;
+  background: var(--surface, #fffdf8);
+  border: 1px solid var(--border, #d9d0c2);
+  border-radius: 18px;
+  box-shadow: 0 10px 26px rgba(48, 39, 28, 0.14);
+}
+
+/* Flatten the inner cards so the pinned bar reads as one instrument strip. */
+.psi-workspace__bar .psi-probe-controls,
+.psi-workspace__bar .notice-card {
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.psi-workspace__bar .notice-card {
+  align-self: center;
+}
+
+@media (min-width: 860px) {
+  .psi-workspace__bar {
+    position: sticky;
+    top: 8px;
+    z-index: 5;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    align-items: center;
+  }
+}

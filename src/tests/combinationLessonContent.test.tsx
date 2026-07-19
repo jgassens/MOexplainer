@@ -55,23 +55,30 @@ describe("Lesson 2 combination coefficient explanation", () => {
   it("anchors the first step in relatable pi-bond chemistry", () => {
     const target = renderLesson();
 
-    expect(target.textContent).toContain("Start with the π part of a C=C bond");
-    expect(target.textContent).toContain("the C=C double bond has a σ bond plus a π bond");
-    expect(target.textContent).toContain("two neighboring p orbitals overlapping side-by-side");
-    expect(target.textContent).toContain("Match the center-facing signs to build the bonding π MO");
+    expect(target.textContent).toContain("Local sample");
+    expect(target.textContent).toContain("Sample one point in the overlap region");
+    expect(target.textContent).toContain("At one marked point between two neighboring p atomic orbitals");
+    expect(target.textContent).toContain("Two p atomic orbitals are the starting functions, φA and φB");
+    expect(target.textContent).toContain("ψ+ = N(φA + φB)");
+    expect(target.textContent).toContain("ψ− = N(φA − φB)");
+    expect(target.textContent).toContain("absolute choice of color is arbitrary");
+    expect(target.textContent).toContain(
+      "signed AO amplitude from φA + signed AO amplitude from φB = MO amplitude ψ at this point",
+    );
     expect(target.textContent).toContain("this is not the whole double bond");
     expect(target.textContent).toContain("it is the π-bond part of the double bond");
     expect(target.textContent).toContain("Opposite-phase addition gives π* with a node");
     expect(target.textContent).toContain("would oppose π bonding instead of strengthening it");
     expect(target.textContent).toContain("This is the bonding π MO; with two π electrons in it");
-    expect(target.textContent).toContain("The 0.60 is a fixed, scaled teaching value");
-    expect(target.textContent).toContain("not experimental data");
+    expect(target.textContent).toContain("This is one local sample");
+    expect(target.textContent).toContain("φA(r) = +0.60");
+    expect(target.textContent).toContain("|ψ+(r)|² = 1.44");
   });
 
   it("connects equal and unequal weights to the ethylene and carbonyl cases", async () => {
     const target = renderLesson();
     const weightsTab = Array.from(target.querySelectorAll("button")).find((item) =>
-      item.textContent?.includes("Weights"),
+      item.textContent?.includes("Unequal weights"),
     );
     expect(weightsTab).toBeTruthy();
 
@@ -80,39 +87,46 @@ describe("Lesson 2 combination coefficient explanation", () => {
       await Promise.resolve();
     });
 
-    expect(target.textContent).toContain("Equal weights are the symmetric reference");
-    expect(target.textContent).toContain("not an atom picker");
-    expect(target.textContent).toContain("C=C pi system of ethylene");
-    expect(target.textContent).toContain("heteroatom case such as C=O");
-    expect(target.textContent).toContain("oxygen contributes more to the bonding π MO");
+    expect(target.textContent).toContain("Use unequal coefficients for C=O");
+    expect(target.textContent).toContain("For C=C, equal AO weights are a useful first model");
+    expect(target.textContent).toContain("C=O π bonding MO");
+    expect(target.textContent).toContain("cC < cO; more oxygen character");
+    expect(target.textContent).toContain("C=O π* antibonding MO");
+    expect(target.textContent).toContain("cC > cO; more carbon character");
+    expect(target.textContent).toContain("O-side coefficient cO");
 
-    const mostlyB = Array.from(target.querySelectorAll("button")).find((item) =>
-      item.textContent?.includes("Mostly B"),
+    const moreC = Array.from(target.querySelectorAll("button")).find((item) =>
+      item.textContent?.includes("More C"),
     );
-    expect(mostlyB).toBeTruthy();
+    expect(moreC).toBeTruthy();
 
     await act(async () => {
-      mostlyB?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      moreC?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
       await Promise.resolve();
     });
 
-    expect(target.textContent).toContain("more atom B character");
-    expect(target.textContent).toContain("carbonyl bonding pi MO is more oxygen-like");
-    expect(target.textContent).toContain("pi* is more carbon-like");
+    expect(target.textContent).toContain("For a carbonyl π bonding MO");
+    expect(target.textContent).toContain("oxygen p orbital contributes more strongly");
   });
 
   it("keeps the molecular orbital equation open and teaching-rich", async () => {
     const target = renderLesson();
 
     expect(target.querySelector("details.going-deeper")).toBeNull();
-    expect(target.textContent).toContain("Equation walkthrough");
+    expect(target.textContent).toContain("Reusable math tool");
+    expect(target.textContent).toContain("Build ψ from AO amplitudes");
+    expect(target.textContent).toContain("Square ψ to get density");
+    expect(target.textContent).toContain("Identify the overlap term");
+    expect(target.textContent).not.toContain("1 Add amplitudes");
+    expect(target.textContent).not.toContain("2 Square ψ");
+    expect(target.textContent).not.toContain("3 See overlap");
     expect(target.textContent).toContain("Reference equation");
     expect(target.textContent).toContain("Live substitution");
     expect(target.querySelector('button[aria-label="MO wave amplitude"]')).toBeTruthy();
     expect(target.querySelector('button[aria-label="weight on orbital A"]')).toBeTruthy();
-    expect(target.querySelector('button[aria-label="signed weight on orbital B"]')).toBeTruthy();
+    expect(target.querySelector('button[aria-label="weight on orbital B"]')).toBeTruthy();
     expect(target.textContent).toContain(
-      "You get it only after adding the two starting-orbital contributions",
+      "only after adding signed amplitudes from the starting atomic orbitals",
     );
     expect(target.textContent).toContain(
       "Here cA is fixed at 1.00 because this step models an ethylene-like C=C bond",
@@ -121,14 +135,14 @@ describe("Lesson 2 combination coefficient explanation", () => {
       "The +0.60 is a fixed, scaled sample value chosen to make the arithmetic visible",
     );
     expect(target.textContent).toContain(
-      "When the atoms are not the same, as in C=O, the weights become chemically important",
+      "the coefficient size becomes chemically important for heteroatoms such as oxygen",
     );
     expect(target.textContent).toContain(
-      "For the C=C reference, B has the same size weight as A; flipping B changes the sign only",
+      "The relative phase choice decides whether this term is added or subtracted",
     );
 
     const crossTab = Array.from(target.querySelectorAll("button")).find((item) =>
-      item.textContent?.includes("See overlap"),
+      item.textContent?.includes("Identify the overlap term"),
     );
     expect(crossTab).toBeTruthy();
 
@@ -137,11 +151,12 @@ describe("Lesson 2 combination coefficient explanation", () => {
       await Promise.resolve();
     });
 
-    expect(target.textContent).toContain("It uses both fixed sample amplitudes at once");
+    expect(target.textContent).toContain("The cross term, 2cAcBφAφB");
     expect(target.textContent).toContain(
-      "so it is the piece that knows whether A and B have the same or opposite phase",
+      "reports constructive or destructive overlap",
     );
-    expect(target.textContent).toContain("Positive builds density between atoms; negative cancels it");
+    expect(target.textContent).toContain("Relative phase chooses bonding versus antibonding");
+    expect(target.textContent).toContain("Overlap controls how large the bonding/antibonding energy splitting is");
   });
 
   it("teaches the chemical consequence of matching versus flipping signs", async () => {
@@ -149,12 +164,12 @@ describe("Lesson 2 combination coefficient explanation", () => {
 
     expect(target.textContent).toContain("Matched center-facing lobes are in phase");
     expect(target.textContent).toContain("ethylene has a π bond");
-    expect(target.textContent).toContain("At the circled point, orbital A contributes +0.60");
-    expect(target.textContent).toContain("draw the whole π bonding orbital");
-    expect(target.textContent).toContain("fixed, scaled teaching value chosen for this sampled point");
+    expect(target.textContent).toContain("At the marked point, φA(r) = +0.60");
+    expect(target.textContent).toContain("ψ+ = N(φA + φB)");
+    expect(target.textContent).toContain("This point is only a sample");
 
     const flipButton = Array.from(target.querySelectorAll("button")).find((item) =>
-      item.textContent?.includes("flip B"),
+      item.textContent?.includes("ψ− out-of-phase"),
     );
     expect(flipButton).toBeTruthy();
 
@@ -165,40 +180,38 @@ describe("Lesson 2 combination coefficient explanation", () => {
 
     expect(target.textContent).toContain("This is the antibonding π* MO");
     expect(target.textContent).toContain("its node removes electron density from the bond region");
-    expect(target.textContent).toContain("A zero in the middle is a node");
-    expect(target.textContent).toContain("draws the π* antibonding node");
+    expect(target.textContent).toContain("the teaching arithmetic cancels to 0.00");
+    expect(target.textContent).toContain("|ψ−(r)|² = 0.00");
   });
 
-  it("keeps the every-point step grounded in bonding and antibonding pictures", async () => {
+  it("keeps the whole-orbital step grounded in bonding and antibonding pictures", async () => {
     const target = renderLesson();
-    const everyPointTab = Array.from(target.querySelectorAll("button")).find((item) =>
-      item.textContent?.includes("Every point"),
+    const wholeOrbitalTab = Array.from(target.querySelectorAll("button")).find((item) =>
+      item.textContent?.includes("Whole orbital"),
     );
-    expect(everyPointTab).toBeTruthy();
+    expect(wholeOrbitalTab).toBeTruthy();
 
     await act(async () => {
-      everyPointTab?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      wholeOrbitalTab?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
       await Promise.resolve();
     });
 
-    expect(target.textContent).toContain("Add the wavefunctions across the whole bond region");
+    expect(target.textContent).toContain("Build the full MO across space");
     expect(target.textContent).toContain(
       "A molecular orbital is not made by adding two orbital colors at one spot",
     );
-    expect(target.textContent).toContain("It is a wavefunction spread through space");
-    expect(target.textContent).toContain(
-      "At any one point, the MO value equals the value from p orbital A plus the value from p orbital B",
-    );
+    expect(target.textContent).toContain("The full MO is made by repeating that signed combination");
+    expect(target.textContent).toContain("The sample point shows the local arithmetic");
     expect(target.textContent).toContain("matching phase between the nuclei makes the wavefunction values reinforce");
     expect(target.textContent).toContain("that cancellation creates the node that marks antibonding");
     expect(target.textContent).toContain("The colors only mark relative phase");
     expect(target.textContent).toContain("They are arbitrary labels, not charge");
-    expect(target.textContent).toContain("Use one sampled point to build the whole MO");
+    expect(target.textContent).toContain("Square ψ to get density");
     expect(target.textContent).toContain(
-      "Lesson focus: every point. The equation still shows one sampled point",
+      "Lesson focus: whole orbital. The equation still shows one sampled point",
     );
     expect(target.textContent).toContain(
-      "repeats that same signed addition across the whole bond region",
+      "For ψ+ / π bonding, same-phase amplitude connects across the bond region",
     );
   });
 });
