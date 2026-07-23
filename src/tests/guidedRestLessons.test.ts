@@ -12,16 +12,47 @@ describe('guided rest lesson integration', () => {
     expect(lessons[1]?.id).toBe('combination');
   });
 
-  it('keeps twist overlap as Lesson 8 and Walsh geometry as Lesson 9', () => {
-    expect(guidedLessonContent.geometry.visual).toBe('twist-geometry');
-    expect(guidedLessonContent['walsh-geometry'].visual).toBe('walsh-geometry');
+  it('merges energy gap, polarization, and ethylene/formaldehyde into one lesson with per-stage visuals', () => {
+    const lesson = guidedLessonContent['energy-gap'];
+    expect(lesson.stages).toHaveLength(9);
+    const visuals = new Set(lesson.stages.map((stage) => stage.visual ?? lesson.visual));
+    expect(visuals).toEqual(new Set(['energy-gap', 'polarization', 'ethylene-formaldehyde']));
+
+    // The one idea unique to the old ethylene/formaldehyde lesson must survive.
+    const lonePairs = lesson.stages.find((stage) => stage.id === 'lone-pairs');
+    expect(lonePairs?.lead).toContain('lone-pair character on oxygen');
+
+    // Every quiz item from the three source lessons is carried into both cards.
+    const checkpointIds = lesson.checkpoints.map((item) => item.id);
+    for (const id of ['gap-choice', 'polarization-choice', 'polarization-reactivity-short', 'ef-compare-choice', 'ef-lonepair-short']) {
+      expect(checkpointIds).toContain(id);
+    }
+    expect(lesson.endItems.map((item) => item.id)).toEqual(checkpointIds);
+
+    // The folded-in lessons are no longer standalone guided lessons.
+    expect(Object.keys(guidedLessonContent)).not.toContain('polarization');
+    expect(Object.keys(guidedLessonContent)).not.toContain('ethylene-formaldehyde');
+  });
+
+  it('folds twist geometry and Walsh into the overlap lesson as per-stage visuals', () => {
+    const lesson = guidedLessonContent.overlap;
+    expect(lesson.stages).toHaveLength(9);
+    const visuals = new Set(lesson.stages.map((stage) => stage.visual ?? lesson.visual));
+    expect(visuals).toEqual(new Set(['overlap', 'twist-geometry', 'walsh-geometry']));
+
+    // The carbene-transfer item unique to the old Walsh lesson survives.
+    expect(lesson.endItems.some((item) => item.id === 'walsh-carbene-short')).toBe(true);
+
+    // geometry and walsh-geometry are no longer standalone guided lessons.
+    expect(Object.keys(guidedLessonContent)).not.toContain('geometry');
+    expect(Object.keys(guidedLessonContent)).not.toContain('walsh-geometry');
   });
 
   it('uses a limited number of going deeper panels for conceptual bottlenecks', () => {
     const panels = Object.values(guidedLessonContent).flatMap((lesson) =>
       lesson.stages.flatMap((stage) => stage.goingDeeper ?? []),
     );
-    expect(panels).toHaveLength(6);
+    expect(panels).toHaveLength(5);
     expect(panels.map((panel) => panel.title)).toContain('Walsh diagrams connect shape to occupancy');
     expect(panels.map((panel) => panel.title)).toContain('Computed orbital surfaces are drawings of a chosen contour');
   });
@@ -34,44 +65,10 @@ describe('guided rest lesson integration', () => {
     }
   });
 
-  it('keeps Lesson 3 centered on signed addition, density/node formation, and the bonding-antibonding energy pair', () => {
-    const lesson = guidedLessonContent.bonding;
-    expect(lesson.visual).toBe('bonding');
-    expect(lesson.stages.map((stage) => stage.id)).toEqual(['in-phase', 'out-of-phase', 'energy-pair']);
-    expect(lesson.stages[0]?.lead).toContain('In the last lesson');
-    expect(lesson.stages[0]?.lead).toContain('C=C π bond');
-    expect(lesson.stages[0]?.lead).toContain('equivalent neighboring carbon p atomic orbitals');
-    expect(lesson.stages[0]?.lead).not.toContain('chapter');
-    expect(lesson.stages[0]?.lead).toContain('two molecular orbitals');
-    expect(lesson.stages[0]?.lead).toContain('bonding π combination');
-    expect(lesson.stages[0]?.lead).toContain('ψ+ = N(φA + φB)');
-    expect(lesson.stages[0]?.lead).toContain('ψ− = N(φA − φB)');
-    expect(lesson.stages[0]?.equation).toContain('ψ+ = N(φA + φB)');
-    expect(lesson.stages[1]?.equation).toContain('|0|²');
-    expect(lesson.stages[1]?.lead).toContain('starting functions, φA and φB');
-    expect(lesson.stages[2]?.equation).toContain('overlap S ≈ cos(θ)');
-    expect(lesson.stages[2]?.lead).toContain('Twisting changes overlap, not the relative-phase rule');
-    expect(lesson.stages[2]?.lead).toContain('At 90° twist, π overlap is essentially zero');
-    expect(lesson.stages[2]?.correction).toContain('Do not attribute π* to twisting');
-    expect(lesson.endItems.some((item) => item.id === 'bond-transfer-short')).toBe(true);
-  });
-
   it('keeps purpose copy out of the shared lesson header so step cards carry the explanation', () => {
     const shell = readFileSync(resolve(process.cwd(), 'src/components/LessonShell/LessonShell.tsx'), 'utf8');
     expect(shell).not.toContain('<p>{purpose}</p>');
     expect(shell).not.toContain('learning-cycle');
-  });
-
-  it('makes the Lesson 3 equation and MO pair interactive instead of static captions', () => {
-    const source = readFileSync(resolve(process.cwd(), 'src/lessons/GuidedOrbitalLesson.tsx'), 'utf8');
-    expect(source).toContain('BondingEquationChooser');
-    expect(source).toContain('Review Lesson 2');
-    expect(source).toContain('ψ+ = N(φA + φB)');
-    expect(source).toContain('ψ− = N(φA − φB)');
-    expect(source).toContain('p-orbital twist angle / π overlap');
-    expect(source).toContain('relative overlap S ≈ cos');
-    expect(source).toContain('Twisting the p orbitals changes overlap, not phase');
-    expect(source).not.toContain('add ψ values');
   });
 });
 

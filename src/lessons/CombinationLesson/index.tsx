@@ -1,4 +1,5 @@
 import { useEffect, useId, useMemo, useState, type ReactNode } from "react";
+import { AssessmentCard, type AssessmentItem } from "../../components/Assessment";
 import { LessonShell } from "../../components/LessonShell/LessonShell";
 import { NoticeCard } from "../../components/LessonShell/NoticeCard";
 import { scrollToPageTop } from "../../utils/scroll";
@@ -35,6 +36,50 @@ const stages: readonly StageCopy[] = [
     lead: "For C=C, equal AO weights are a useful first model. For C=O, carbon and oxygen p orbitals are not equivalent, so the coefficients differ. The bonding π MO has more oxygen character, while the antibonding π* MO has more carbon character.",
   },
 ] as const;
+
+const bondNodeItems: AssessmentItem[] = [
+  {
+    id: "bond-node-choice",
+    type: "choice",
+    prompt: "Two p orbitals overlap with opposite signs in the internuclear region. What feature must appear in the resulting MO?",
+    target: "Distinguish destructive overlap from constructive overlap.",
+    choices: [
+      { id: "A", text: "A node between the nuclei and reduced electron density there" },
+      { id: "B", text: "Extra electron density between the nuclei" },
+      { id: "C", text: "A positive charge between the nuclei" },
+      { id: "D", text: "No change, because phase has no chemical consequence" },
+    ],
+    correctChoiceId: "A",
+    feedback: "Opposite signs cancel in the overlap region. That cancellation creates a node and gives antibonding character.",
+    modelAnswer:
+      "Opposite phase produces destructive overlap in the internuclear region. The resulting node removes density from the region that would otherwise stabilize the two nuclei.",
+    rubric: ["Identifies a node", "Connects opposite phase to cancellation", "Connects lost internuclear density to antibonding character"],
+  },
+  {
+    id: "bond-energy-short",
+    type: "short",
+    prompt: "Explain why the bonding MO is lower in energy than the antibonding MO.",
+    target: "Connect phase, density between nuclei, and relative energy.",
+    feedback: "A strong answer mentions in-phase addition, density between nuclei, and the antibonding node.",
+    modelAnswer:
+      "In the bonding combination, same-phase amplitudes add between the nuclei, so occupied electron density helps bind the nuclei. In the antibonding combination, opposite phases cancel between the nuclei, creating a node and a higher-energy orbital.",
+    rubric: ["Mentions in-phase addition", "Mentions density buildup between nuclei", "Compares with antibonding cancellation or node"],
+  },
+];
+
+const bondNodeEndItems: AssessmentItem[] = [
+  ...bondNodeItems,
+  {
+    id: "bond-transfer-short",
+    type: "short",
+    prompt: "Apply the same reasoning to a σ bond made from two hybrid orbitals. What changes and what stays the same?",
+    target: "Transfer bonding/antibonding logic from p orbitals to σ overlap.",
+    feedback: "The geometry changes, but addition, subtraction, phase, node formation, and conservation of orbitals remain the same.",
+    modelAnswer:
+      "Hybrid orbitals point along the bond axis rather than above and below it, but same-phase overlap still gives a σ bonding MO and opposite-phase overlap gives a σ* antibonding MO with a node between nuclei.",
+    rubric: ["Mentions σ overlap along bond axis", "Preserves same/opposite phase logic", "Mentions σ* node or antibonding partner"],
+  },
+];
 
 function formatNumber(value: number): string {
   if (Math.abs(value) < 0.005) return "0.00";
@@ -1281,6 +1326,10 @@ export function CombinationLesson(props: LessonComponentProps) {
   const weightA = 1;
   const atFirstStage = stageIndex === 0;
   const atLastStage = stageIndex === stages.length - 1;
+  const interactionSummary =
+    phaseB === 1
+      ? `combination=ψ+ in-phase; cB=${weightB.toFixed(2)}`
+      : `combination=ψ− out-of-phase; cB=${weightB.toFixed(2)}`;
 
   const choosePhase = (nextPhase: Phase) => {
     setPhaseB(nextPhase);
@@ -1599,6 +1648,60 @@ export function CombinationLesson(props: LessonComponentProps) {
           </div>
         </div>
 
+        <section className="combination-bond-energy" aria-label="Bonding and antibonding energy and occupancy">
+          <h3>Bonding sits lower; antibonding sits higher</h3>
+          <p>
+            The two combinations are not equal in energy. The in-phase bonding
+            MO (ψ+) is stabilized because electron density builds between the
+            nuclei. The out-of-phase antibonding MO (ψ−) is raised in energy
+            because its node removes density from that same region. The number of
+            molecular orbitals always equals the number of starting atomic
+            orbitals: two p orbitals give exactly these two MOs.
+          </p>
+          <p>
+            Electron count decides the consequence. With two π electrons, only
+            the lower ψ+ bonding MO is filled, so the interaction is net
+            stabilizing — this is the π bond of ethylene. With four electrons,
+            both MOs are filled, the antibonding penalty cancels the bonding
+            benefit, and there is no net π bond.
+          </p>
+          <details className="combination-bond-deeper">
+            <summary>Going deeper: why antibonding is not merely “less bonding”</summary>
+            <p>
+              The bonding combination is stabilized because electron density
+              accumulates between the nuclei. The antibonding combination is
+              destabilized because destructive interference removes density from
+              that same region and creates a node. In qualitative MO theory, the
+              antibonding destabilization is usually drawn larger than the bonding
+              stabilization. That asymmetry matters when two already-filled
+              orbitals are forced to interact: the net result is repulsive —
+              closed-shell repulsion, the destabilizing four-electron interaction
+              that results when two filled orbitals overlap.
+            </p>
+          </details>
+        </section>
+
+        <div className="combination-assessment">
+          <AssessmentCard
+            meta={props.meta}
+            mode="practice"
+            sectionId="checkpoint"
+            sectionTitle="Embedded checkpoint"
+            sectionLead="Compare ψ+ and ψ− above, then answer. Read the sign of the amplitudes between the atoms."
+            items={bondNodeItems}
+            interactionSummary={interactionSummary}
+          />
+          <AssessmentCard
+            meta={props.meta}
+            mode="graded"
+            sectionId="end-of-lesson"
+            sectionTitle="End-of-lesson submitted assessment"
+            sectionLead="Explain how relative phase produces the bonding π MO and the antibonding π* MO with its node. No answer key is exported."
+            items={bondNodeEndItems}
+            interactionSummary={interactionSummary}
+          />
+        </div>
+
         <div className="guided-actions">
           <button
             type="button"
@@ -1613,7 +1716,7 @@ export function CombinationLesson(props: LessonComponentProps) {
             onClick={nextFromBottom}
             disabled={atLastStage && props.nextDisabled}
           >
-            {atLastStage ? "Continue to bonding and antibonding" : "Continue"}
+            Continue
           </button>
         </div>
       </section>

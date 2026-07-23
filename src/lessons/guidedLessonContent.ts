@@ -30,6 +30,13 @@ export interface LessonStage {
   lead: string;
   equation: string;
   correction: string;
+  /**
+   * Optional per-stage visual. When set, this overrides the lesson-level
+   * `visual` while this stage is active, so a single (merged) lesson can walk
+   * through several interactive pictures. When omitted, the lesson-level
+   * `visual` is used.
+   */
+  visual?: VisualKind;
   goingDeeper?: GoingDeeperPanelData[];
 }
 
@@ -44,18 +51,6 @@ export interface GuidedLessonData {
   checkpoints: AssessmentItem[];
   endItems: AssessmentItem[];
 }
-
-const antibondingEnergyPanel: GoingDeeperPanelData = {
-  title: 'Why antibonding is not merely “less bonding”',
-  body:
-    'The bonding combination is stabilized because electron density accumulates between the nuclei. The antibonding combination is destabilized because destructive interference removes density from that same region and creates a node. In qualitative MO theory, the antibonding destabilization is usually drawn larger than the bonding stabilization. That asymmetry matters when two already-filled orbitals are forced to interact: the net result is repulsive.',
-  terms: [
-    {
-      term: 'closed-shell repulsion',
-      meaning: 'The destabilizing four-electron interaction that results when two filled orbitals overlap.',
-    },
-  ],
-};
 
 const energyGapPanel: GoingDeeperPanelData = {
   title: 'First-order and second-order mixing',
@@ -103,36 +98,6 @@ const calculatedSurfacePanel: GoingDeeperPanelData = {
     { term: 'isosurface', meaning: 'A surface drawn at one selected value of a function.' },
   ],
 };
-
-const bondingItems: AssessmentItem[] = [
-  {
-    id: 'bond-node-choice',
-    type: 'choice',
-    prompt: 'Two p orbitals overlap with opposite signs in the internuclear region. What feature must appear in the resulting MO?',
-    target: 'Distinguish destructive overlap from constructive overlap.',
-    choices: [
-      { id: 'A', text: 'A node between the nuclei and reduced electron density there' },
-      { id: 'B', text: 'Extra electron density between the nuclei' },
-      { id: 'C', text: 'A positive charge between the nuclei' },
-      { id: 'D', text: 'No change, because phase has no chemical consequence' },
-    ],
-    correctChoiceId: 'A',
-    feedback: 'Opposite signs cancel in the overlap region. That cancellation creates a node and gives antibonding character.',
-    modelAnswer:
-      'Opposite phase produces destructive overlap in the internuclear region. The resulting node removes density from the region that would otherwise stabilize the two nuclei.',
-    rubric: ['Identifies a node', 'Connects opposite phase to cancellation', 'Connects lost internuclear density to antibonding character'],
-  },
-  {
-    id: 'bond-energy-short',
-    type: 'short',
-    prompt: 'Explain why the bonding MO is lower in energy than the antibonding MO.',
-    target: 'Connect phase, density between nuclei, and relative energy.',
-    feedback: 'A strong answer mentions in-phase addition, density between nuclei, and the antibonding node.',
-    modelAnswer:
-      'In the bonding combination, same-phase amplitudes add between the nuclei, so occupied electron density helps bind the nuclei. In the antibonding combination, opposite phases cancel between the nuclei, creating a node and a higher-energy orbital.',
-    rubric: ['Mentions in-phase addition', 'Mentions density buildup between nuclei', 'Compares with antibonding cancellation or node'],
-  },
-];
 
 const overlapItems: AssessmentItem[] = [
   {
@@ -374,62 +339,13 @@ const calculationItems: AssessmentItem[] = [
 ];
 
 export const guidedLessonContent: Record<GuidedRestLessonId, GuidedLessonData> = {
-  bonding: {
-    id: 'bonding',
-    purpose: 'Use the C=C π bond to turn signed addition into bonding, antibonding, nodes, and electron-count consequences.',
-    question: 'When two p orbitals mix, how do relative phase and geometric overlap separately control π bonding, π* antibonding, and the energy split?',
-    visual: 'bonding',
-    checkpointLead: 'Use the workbench to compare ψ+ and ψ−, then twist the p orbitals. Watch the pointwise AO amplitudes, density readout, node, overlap value, and energy pair before answering.',
-    endLead: 'Submit an explanation that links signed AO-amplitude addition, node formation, orbital count, twist-controlled overlap, and electron occupancy. No answer key is exported.',
-    stages: [
-      {
-        id: 'in-phase',
-        shortTitle: 'Add signs',
-        title: 'The bond center is a signed-addition test',
-        lead: 'In the last lesson, we learned that a molecular orbital is made by combining values from starting orbitals: ψ = cA φA + cB φB. Here we refine that idea into the bonding test for a C=C π bond. Start with two equivalent neighboring carbon p atomic orbitals, φA and φB. Because there are two starting orbitals, the mixing must produce two molecular orbitals: one same-sign bonding π combination, ψ+ = N(φA + φB), and one opposite-sign antibonding π* combination, ψ− = N(φA − φB). Equivalent carbon atoms give equal-sized starting contributions in this first case; later lessons will ask what changes when the atoms are not equivalent. The quick test is the bond center, the region between the nuclei. If the facing wave amplitudes have the same sign there, the values reinforce and can build density between the atoms. If the facing values have opposite signs there, they cancel at the center and set up the node that identifies the antibonding orbital.',
-        equation: 'ψ+ = N(φA + φB); ψ− = N(φA − φB)',
-        correction: 'Do not read + and − as charge. They are the signs of wave amplitude at the same point in space.',
-      },
-      {
-        id: 'out-of-phase',
-        shortTitle: 'Square ψ',
-        title: 'Density or a node appears only after the addition',
-        lead: 'The picture is not showing electron density until after the signed AO-amplitude combination has happened. First the starting functions, φA and φB, are added or subtracted point by point to make ψ+ or ψ−. Then ψ is squared to make the density picture students usually recognize. Constructive addition gives density between the nuclei; destructive addition gives ψ = 0 at the bond center, which is a node.',
-        equation: 'same signs -> |large ψ|²; opposite signs -> |0|²',
-        correction: 'Do not skip straight to density. The node comes from cancellation of signed wave amplitudes before squaring.',
-      },
-      {
-        id: 'energy-pair',
-        shortTitle: 'Occupy pair',
-        title: 'Twist controls overlap, then occupancy decides the consequence',
-        lead: 'The slider below changes the p-orbital twist angle. Twisting changes overlap, not the relative-phase rule. Parallel p orbitals have maximum π overlap. As one p orbital twists toward perpendicular, the overlap S shrinks approximately as cos(θ), so the ψ+/ψ− energy split shrinks. At 90° twist, π overlap is essentially zero: the bonding MO is not meaningfully stabilized and the antibonding MO is not meaningfully destabilized. With two electrons only the lower MO is occupied; with four electrons both are occupied, so there is no net π bonding benefit and, in this simple teaching model, a filled-filled penalty when overlap exists.',
-        equation: 'twist angle θ -> overlap S ≈ cos(θ) -> ψ+/ψ− energy split',
-        correction: 'Do not attribute π* to twisting. The antibonding orbital comes from the out-of-phase linear combination; twisting only controls how strongly the two p orbitals interact.',
-        goingDeeper: [antibondingEnergyPanel],
-      },
-    ],
-    checkpoints: bondingItems,
-    endItems: [
-      ...bondingItems,
-      {
-        id: 'bond-transfer-short',
-        type: 'short',
-        prompt: 'Apply the same reasoning to a σ bond made from two hybrid orbitals. What changes and what stays the same?',
-        target: 'Transfer bonding/antibonding logic from p orbitals to σ overlap.',
-        feedback: 'The geometry changes, but addition, subtraction, phase, node formation, and conservation of orbitals remain the same.',
-        modelAnswer:
-          'Hybrid orbitals point along the bond axis rather than above and below it, but same-phase overlap still gives a σ bonding MO and opposite-phase overlap gives a σ* antibonding MO with a node between nuclei.',
-        rubric: ['Mentions σ overlap along bond axis', 'Preserves same/opposite phase logic', 'Mentions σ* node or antibonding partner'],
-      },
-    ],
-  },
   overlap: {
     id: 'overlap',
-    purpose: 'Make orbital overlap concrete: orbitals must occupy the same region of space with the right relative phase to interact strongly.',
-    question: 'Why do distance, size, and orientation change the strength of an orbital interaction?',
+    purpose: 'Make orbital overlap concrete, then show what controls it. Part A: overlap needs two orbitals in the same region of space with the right relative phase, and twisting a π system weakens it. Part B: when a molecule distorts, the electron count decides which shape is actually preferred (Walsh diagrams).',
+    question: 'How do distance, alignment, and twist control the strength of an orbital interaction, and how does electron count decide which geometry a molecule prefers?',
     visual: 'overlap',
-    checkpointLead: 'Move the distance and spread sliders, then predict how the interaction changes.',
-    endLead: 'Submit a geometry-to-overlap explanation. No answer key is exported.',
+    checkpointLead: 'Work through three pictures: move the distance and spread sliders, twist the p orbitals from 0° toward 90°, then change the distortion and electron count. Predict each result before you read it.',
+    endLead: 'Submit an explanation that ties geometry to overlap and to electron-count-driven shape. No answer key is exported.',
     stages: [
       {
         id: 'space',
@@ -455,17 +371,86 @@ export const guidedLessonContent: Record<GuidedRestLessonId, GuidedLessonData> =
         equation: 'structure -> overlap -> interaction strength',
         correction: 'Do not invoke overlap as a magic word. Say which orbitals overlap and how geometry changes that overlap.',
       },
+      {
+        id: 'aligned',
+        shortTitle: 'Aligned p orbitals',
+        title: 'Aligned neighboring p orbitals communicate strongly',
+        lead: 'Now make that geometry effect concrete for a π system. A conjugated π system depends on neighboring p orbitals being aligned. When the lobes are parallel, the orbitals can mix across the bond.',
+        equation: 'parallel p orbitals -> useful π overlap',
+        correction: 'Do not treat a drawn double bond as enough. The p orbitals must be geometrically aligned.',
+        visual: 'twist-geometry',
+      },
+      {
+        id: 'twist',
+        shortTitle: 'Twist',
+        title: 'Twisting removes useful overlap',
+        lead: 'As the torsion angle grows, the p orbitals share less useful space. Near 90°, the π interaction approaches zero in the simple model.',
+        equation: 'π overlap scales with alignment',
+        correction: 'Twisting does not delete the p orbitals. It prevents them from interacting effectively.',
+        visual: 'twist-geometry',
+      },
+      {
+        id: 'delocalization',
+        shortTitle: 'Delocalize',
+        title: 'Planarity lets a π system delocalize',
+        lead: 'Planar or near-planar π systems allow orbital mixing over multiple atoms. Twisting localizes the system by weakening the connection.',
+        equation: 'alignment -> delocalization -> stabilization',
+        correction: 'Do not use “resonance” as a drawing rule only. It has an orbital-overlap condition.',
+        visual: 'twist-geometry',
+      },
+      {
+        id: 'walsh',
+        shortTitle: 'Track energy',
+        title: 'A Walsh diagram follows orbital energies during distortion',
+        lead: 'Part B: geometry does more than switch overlap on and off. Start from a high-symmetry geometry, distort it, and track which orbitals rise or fall. The diagram becomes chemically useful when the orbitals are occupied.',
+        equation: 'geometry -> overlap changes -> orbital-energy changes',
+        correction: 'Do not pick the geometry first and explain it afterward. Let occupancy decide the preference.',
+        visual: 'walsh-geometry',
+        goingDeeper: [walshPanel],
+      },
+      {
+        id: 'mh3',
+        shortTitle: 'MH3 count',
+        title: 'The MH3 framework changes when the key orbital is occupied',
+        lead: 'BH3 has six valence electrons and remains planar. NH3 has eight and uses the stabilized orbital in the pyramidal form.',
+        equation: 'occupied stabilized orbital favors distortion',
+        correction: 'The orbital framework is similar; the electron count changes the shape preference.',
+        visual: 'walsh-geometry',
+      },
+      {
+        id: 'intermediates',
+        shortTitle: 'Intermediates',
+        title: 'Reactive intermediates are electron-count tests of the same picture',
+        lead: 'Carbocations, radicals, carbanions, and carbenes differ because the crucial orbital is empty, singly occupied, or doubly occupied.',
+        equation: 'empty / singly occupied / doubly occupied -> different geometry preferences',
+        correction: 'Do not memorize planar or pyramidal as labels. Ask which orbital is occupied.',
+        visual: 'walsh-geometry',
+      },
     ],
-    checkpoints: overlapItems,
-    endItems: overlapItems,
+    checkpoints: [...overlapItems, ...twistGeometryItems, ...walshGeometryItems],
+    endItems: [
+      ...overlapItems,
+      ...twistGeometryItems,
+      ...walshGeometryItems,
+      {
+        id: 'walsh-carbene-short',
+        type: 'short',
+        prompt: 'Use the CH2 Walsh picture to explain why singlet and triplet carbenes can have different bond angles.',
+        target: 'Transfer Walsh reasoning to carbenes.',
+        feedback: 'The answer should mention paired versus unpaired occupancy of the two frontier orbitals.',
+        modelAnswer:
+          'In CH2, bending opens a gap between the relevant frontier orbitals. A singlet can pair both electrons in the lower orbital at a smaller angle, while a triplet keeps one electron in each orbital and favors a wider angle.',
+        rubric: ['Mentions singlet/triplet occupancy', 'Mentions bending or angle change', 'Connects occupancy to energy preference'],
+      },
+    ],
   },
   'energy-gap': {
     id: 'energy-gap',
-    purpose: 'Add the second control variable for orbital mixing: the starting energy gap between the orbitals.',
-    question: 'Why do close-in-energy orbitals mix more strongly than orbitals far apart in energy?',
+    purpose: 'Turn the starting energy gap into one connected story: a small gap mixes strongly, an unequal gap polarizes the resulting MOs, and electronegativity is where that gap comes from. Then read the whole pattern in a real carbonyl by comparing ethylene and formaldehyde.',
+    question: 'How does the starting energy gap set both how strongly two orbitals mix and how the bonding and antibonding MOs are polarized?',
     visual: 'energy-gap',
-    checkpointLead: 'Move the energy-gap slider while keeping overlap similar. Watch the orbital character percentages.',
-    endLead: 'Submit an energy-gap explanation that distinguishes overlap from starting orbital energy. No answer key is exported.',
+    checkpointLead: 'Move the energy-gap slider, then switch to the electronegativity and carbonyl pictures. Watch the orbital-character percentages and which MO leans toward which atom before you answer.',
+    endLead: 'Submit one explanation that links the starting energy gap to mixing strength, to MO polarization, and to the carbonyl π/π* pattern seen when ethylene becomes formaldehyde. No answer key is exported.',
     stages: [
       {
         id: 'close',
@@ -488,29 +473,18 @@ export const guidedLessonContent: Record<GuidedRestLessonId, GuidedLessonData> =
         id: 'polarized',
         shortTitle: 'Character',
         title: 'Unequal-energy mixing polarizes the resulting MOs',
-        lead: 'The lower MO takes more character from the lower-energy starting orbital. The upper MO takes more character from the higher-energy starting orbital.',
+        lead: 'The lower MO takes more character from the lower-energy starting orbital. The upper MO takes more character from the higher-energy starting orbital. The next steps ask where that unequal starting energy comes from in a real molecule.',
         equation: 'unequal energies -> unequal coefficients',
         correction: 'Do not assume both atoms contribute equally just because both supply p orbitals.',
       },
-    ],
-    checkpoints: energyGapItems,
-    endItems: energyGapItems,
-  },
-  polarization: {
-    id: 'polarization',
-    purpose: 'Use electronegativity as an orbital-energy argument, not just as a partial-charge slogan.',
-    question: 'How does lowering one atom’s orbital energy polarize both the bonding and antibonding MOs?',
-    visual: 'polarization',
-    checkpointLead: 'Compare C=C, C=N, and C=O. Track which MO becomes oxygen-like and which becomes carbon-like.',
-    endLead: 'Submit a carbonyl-polarization explanation. No answer key is exported.',
-    stages: [
       {
         id: 'lower-energy',
         shortTitle: 'Lower AO',
         title: 'Electronegative atoms contribute lower-energy orbitals',
-        lead: 'Oxygen p orbitals begin lower in energy than carbon p orbitals. That starting-energy difference is enough to polarize the resulting π and π* MOs.',
+        lead: 'Electronegativity is the chemical source of that energy gap. Oxygen p orbitals begin lower in energy than carbon p orbitals. That starting-energy difference is enough to polarize the resulting π and π* MOs.',
         equation: 'more electronegative atom -> lower-energy AO',
         correction: 'Do not reduce this to “oxygen is negative.” The MO argument starts with orbital energy.',
+        visual: 'polarization',
       },
       {
         id: 'lower-mo',
@@ -519,6 +493,7 @@ export const guidedLessonContent: Record<GuidedRestLessonId, GuidedLessonData> =
         lead: 'In a carbonyl-like system, the occupied bonding π orbital has more contribution from the lower-energy oxygen orbital.',
         equation: 'lower MO -> more lower-energy character',
         correction: 'A drawn lobe may be smaller for oxygen because oxygen is smaller. Coefficient and display size are not the same thing.',
+        visual: 'polarization',
         goingDeeper: [carbonylPolarizationPanel],
       },
       {
@@ -528,26 +503,16 @@ export const guidedLessonContent: Record<GuidedRestLessonId, GuidedLessonData> =
         lead: 'The higher π* orbital keeps more character from the higher-energy carbon orbital. That is why carbonyl π* is the acceptor orbital at carbon.',
         equation: 'upper MO -> more higher-energy character',
         correction: 'Do not explain nucleophilic addition only with δ+ and δ−. The LUMO coefficient gives the orbital reason.',
+        visual: 'polarization',
       },
-    ],
-    checkpoints: polarizationItems,
-    endItems: polarizationItems,
-  },
-  'ethylene-formaldehyde': {
-    id: 'ethylene-formaldehyde',
-    purpose: 'Use ethylene as the symmetric reference and formaldehyde as the heteroatom-perturbed case.',
-    question: 'What is preserved and what changes when one side of an ethylene-like π system becomes oxygen?',
-    visual: 'ethylene-formaldehyde',
-    checkpointLead: 'Toggle between ethylene and formaldehyde. Identify which claims survive and which change.',
-    endLead: 'Submit a comparison that uses the ethylene reference without pretending formaldehyde is identical. No answer key is exported.',
-    stages: [
       {
         id: 'ethylene',
         shortTitle: 'Reference',
         title: 'Ethylene gives the clean equal-energy π/π* pattern',
-        lead: 'In ethylene, the two carbon p orbitals begin equivalent. The bonding and antibonding π orbitals are therefore symmetric in their carbon contributions.',
+        lead: 'Now put the rule to work on two real molecules. In ethylene, the two carbon p orbitals begin equivalent. The bonding and antibonding π orbitals are therefore symmetric in their carbon contributions.',
         equation: 'C p + C p -> π and π*',
         correction: 'Ethylene is a reference case, not the universal case.',
+        visual: 'ethylene-formaldehyde',
       },
       {
         id: 'formaldehyde',
@@ -556,6 +521,7 @@ export const guidedLessonContent: Record<GuidedRestLessonId, GuidedLessonData> =
         lead: 'Formaldehyde is useful because the framework is analogous but not identical. Oxygen lowers one side of the system, changing the orbital energies and coefficients.',
         equation: 'C p + O p -> polarized π and π*',
         correction: 'Do not say C=O has no π system. It has a polarized π system.',
+        visual: 'ethylene-formaldehyde',
       },
       {
         id: 'lone-pairs',
@@ -564,95 +530,11 @@ export const guidedLessonContent: Record<GuidedRestLessonId, GuidedLessonData> =
         lead: 'Formaldehyde has occupied orbitals with lone-pair character on oxygen. That matters when deciding what the HOMO is and where protonation is expected.',
         equation: 'carbonyl MOs include π, π*, and lone-pair-type orbitals',
         correction: 'Do not assume the π orbital is always the HOMO just because it is familiar from ethylene.',
+        visual: 'ethylene-formaldehyde',
       },
     ],
-    checkpoints: ethyleneFormaldehydeItems,
-    endItems: ethyleneFormaldehydeItems,
-  },
-  geometry: {
-    id: 'geometry',
-    purpose: 'Keep Lesson 8 focused on the existing twist-angle lesson: geometry controls π overlap by controlling alignment.',
-    question: 'Why does twisting a π system reduce orbital overlap and interrupt delocalization?',
-    visual: 'twist-geometry',
-    checkpointLead: 'Twist the model from 0° toward 90° and predict when π overlap disappears.',
-    endLead: 'Submit a twist-angle explanation tied to π overlap. No answer key is exported.',
-    stages: [
-      {
-        id: 'aligned',
-        shortTitle: 'Aligned p orbitals',
-        title: 'Aligned neighboring p orbitals communicate strongly',
-        lead: 'A conjugated π system depends on neighboring p orbitals being aligned. When the lobes are parallel, the orbitals can mix across the bond.',
-        equation: 'parallel p orbitals -> useful π overlap',
-        correction: 'Do not treat a drawn double bond as enough. The p orbitals must be geometrically aligned.',
-      },
-      {
-        id: 'twist',
-        shortTitle: 'Twist',
-        title: 'Twisting removes useful overlap',
-        lead: 'As the torsion angle grows, the p orbitals share less useful space. Near 90°, the π interaction approaches zero in the simple model.',
-        equation: 'π overlap scales with alignment',
-        correction: 'Twisting does not delete the p orbitals. It prevents them from interacting effectively.',
-      },
-      {
-        id: 'delocalization',
-        shortTitle: 'Delocalize',
-        title: 'Planarity lets a π system delocalize',
-        lead: 'Planar or near-planar π systems allow orbital mixing over multiple atoms. Twisting localizes the system by weakening the connection.',
-        equation: 'alignment -> delocalization -> stabilization',
-        correction: 'Do not use “resonance” as a drawing rule only. It has an orbital-overlap condition.',
-      },
-    ],
-    checkpoints: twistGeometryItems,
-    endItems: twistGeometryItems,
-  },
-  'walsh-geometry': {
-    id: 'walsh-geometry',
-    purpose: 'Add the geometry/electron-count lesson as a new Lesson 9 rather than replacing the twist-overlap lesson.',
-    question: 'How can the same orbital framework give different shapes after electrons are placed into it?',
-    visual: 'walsh-geometry',
-    checkpointLead: 'Change the distortion and electron count. Track which occupied orbitals rise or fall.',
-    endLead: 'Submit a Walsh-style electron-count explanation. No answer key is exported.',
-    stages: [
-      {
-        id: 'walsh',
-        shortTitle: 'Track energy',
-        title: 'A Walsh diagram follows orbital energies during distortion',
-        lead: 'Start from a high-symmetry geometry, distort it, and track which orbitals rise or fall. The diagram becomes chemically useful when the orbitals are occupied.',
-        equation: 'geometry -> overlap changes -> orbital-energy changes',
-        correction: 'Do not pick the geometry first and explain it afterward. Let occupancy decide the preference.',
-        goingDeeper: [walshPanel],
-      },
-      {
-        id: 'mh3',
-        shortTitle: 'MH3 count',
-        title: 'The MH3 framework changes when the key orbital is occupied',
-        lead: 'BH3 has six valence electrons and remains planar. NH3 has eight and uses the stabilized orbital in the pyramidal form.',
-        equation: 'occupied stabilized orbital favors distortion',
-        correction: 'The orbital framework is similar; the electron count changes the shape preference.',
-      },
-      {
-        id: 'intermediates',
-        shortTitle: 'Intermediates',
-        title: 'Reactive intermediates are electron-count tests of the same picture',
-        lead: 'Carbocations, radicals, carbanions, and carbenes differ because the crucial orbital is empty, singly occupied, or doubly occupied.',
-        equation: 'empty / singly occupied / doubly occupied -> different geometry preferences',
-        correction: 'Do not memorize planar or pyramidal as labels. Ask which orbital is occupied.',
-      },
-    ],
-    checkpoints: walshGeometryItems,
-    endItems: [
-      ...walshGeometryItems,
-      {
-        id: 'walsh-carbene-short',
-        type: 'short',
-        prompt: 'Use the CH2 Walsh picture to explain why singlet and triplet carbenes can have different bond angles.',
-        target: 'Transfer Walsh reasoning to carbenes.',
-        feedback: 'The answer should mention paired versus unpaired occupancy of the two frontier orbitals.',
-        modelAnswer:
-          'In CH2, bending opens a gap between the relevant frontier orbitals. A singlet can pair both electrons in the lower orbital at a smaller angle, while a triplet keeps one electron in each orbital and favors a wider angle.',
-        rubric: ['Mentions singlet/triplet occupancy', 'Mentions bending or angle change', 'Connects occupancy to energy preference'],
-      },
-    ],
+    checkpoints: [...energyGapItems, ...polarizationItems, ...ethyleneFormaldehydeItems],
+    endItems: [...energyGapItems, ...polarizationItems, ...ethyleneFormaldehydeItems],
   },
   'pi-chain': {
     id: 'pi-chain',

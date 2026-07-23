@@ -127,25 +127,6 @@ function EnergyLevel({ x1, x2, y, label, occupied = false }: { x1: number; x2: n
   );
 }
 
-function BondingEquationChooser({ state, setState }: { state: ControlState; setState: SetControlState }) {
-  const bonding = state.phase === 'bonding';
-  return (
-    <div className="guided-equation-strip guided-equation-strip--interactive" aria-label="Choose the molecular orbital equation to inspect">
-      <div className="guided-equation-options">
-        <button type="button" className={bonding ? 'is-active' : ''} onClick={() => setState({ phase: 'bonding' })}>
-          ψ+ = N(φA + φB)
-        </button>
-        <button type="button" className={!bonding ? 'is-active' : ''} onClick={() => setState({ phase: 'antibonding' })}>
-          ψ− = N(φA − φB)
-        </button>
-      </div>
-      <p>
-        Two p atomic orbitals are the starting functions, φA and φB. A molecular orbital is made by adding or subtracting their signed amplitudes at every point in space. The in-phase combination, ψ+ = N(φA + φB), builds amplitude between the nuclei and gives a π bonding MO. The out-of-phase combination, ψ− = N(φA − φB), cancels between the nuclei and gives a node, producing a π* antibonding MO. The colors only mark relative phase; the absolute choice of color is arbitrary.
-      </p>
-    </div>
-  );
-}
-
 function RotatingPiLobes({
   angle,
   scale = 1,
@@ -751,6 +732,7 @@ export function GuidedOrbitalLesson({ lessonId, ...props }: LessonComponentProps
   const [stageIndex, setStageIndex] = useState(0);
   const [state, setStateInternal] = useState<ControlState>(defaultState);
   const stage = lesson.stages[stageIndex];
+  const activeVisual = stage.visual ?? lesson.visual;
   const atFirstStage = stageIndex === 0;
   const atLastStage = stageIndex === lesson.stages.length - 1;
 
@@ -783,7 +765,7 @@ export function GuidedOrbitalLesson({ lessonId, ...props }: LessonComponentProps
     scrollToPageTop();
   };
 
-  const interactionSummary = useMemo(() => interactionSummaryFor(lesson.visual, state), [lesson.visual, state]);
+  const interactionSummary = useMemo(() => interactionSummaryFor(activeVisual, state), [activeVisual, state]);
 
   const feedback = `${stage.title}: ${stage.correction} Current interaction state: ${interactionSummary}.`;
 
@@ -813,11 +795,7 @@ export function GuidedOrbitalLesson({ lessonId, ...props }: LessonComponentProps
           <span>Step {stageIndex + 1} of {lesson.stages.length}</span>
           <h2>{stage.title}</h2>
           <p>{stage.lead}</p>
-          {lessonId === 'bonding' && stage.id === 'in-phase' ? (
-            <BondingEquationChooser state={state} setState={setState} />
-          ) : (
-            <div className="guided-equation-strip">{stage.equation}</div>
-          )}
+          <div className="guided-equation-strip">{stage.equation}</div>
           <p className="guided-correction">Do not read it this way: {stage.correction}</p>
         </section>
 
@@ -826,7 +804,7 @@ export function GuidedOrbitalLesson({ lessonId, ...props }: LessonComponentProps
         <div className="guided-workspace">
           <div className="guided-workspace__side">
             <div className="guided-workspace__sticky">
-              <VisualPanel visual={lesson.visual} state={state} setState={setState} onReviewPrevious={reviewPreviousLesson} />
+              <VisualPanel visual={activeVisual} state={state} setState={setState} onReviewPrevious={reviewPreviousLesson} />
 
               <NoticeCard feedback={feedback} />
             </div>

@@ -1,13 +1,8 @@
 export type LessonId =
   | 'phase'
   | 'combination'
-  | 'bonding'
   | 'overlap'
   | 'energy-gap'
-  | 'polarization'
-  | 'ethylene-formaldehyde'
-  | 'geometry'
-  | 'walsh-geometry'
   | 'pi-chain'
   | 'calculation';
 
@@ -28,60 +23,30 @@ export const lessons: LessonMeta[] = [
   {
     id: 'combination',
     number: 2,
-    shortTitle: 'Combine values',
-    title: 'How two orbitals become one MO',
-  },
-  {
-    id: 'bonding',
-    number: 3,
     shortTitle: 'Bond or node',
-    title: 'Bonding and antibonding',
+    title: 'Two orbitals: bonding and antibonding',
   },
   {
     id: 'overlap',
-    number: 4,
-    shortTitle: 'Overlap',
-    title: 'Overlap controls interaction',
+    number: 3,
+    shortTitle: 'Overlap & shape',
+    title: 'Overlap and geometry',
   },
   {
     id: 'energy-gap',
-    number: 5,
-    shortTitle: 'Energy gap',
-    title: 'Starting energy gap',
-  },
-  {
-    id: 'polarization',
-    number: 6,
-    shortTitle: 'Polarization',
-    title: 'Electronegativity and polarization',
-  },
-  {
-    id: 'ethylene-formaldehyde',
-    number: 7,
-    shortTitle: 'C=C vs C=O',
-    title: 'Ethylene and formaldehyde',
-  },
-  {
-    id: 'geometry',
-    number: 8,
-    shortTitle: 'Twist & overlap',
-    title: 'Geometry changes overlap',
-  },
-  {
-    id: 'walsh-geometry',
-    number: 9,
-    shortTitle: 'Walsh diagrams',
-    title: 'Geometry and electron count',
+    number: 4,
+    shortTitle: 'Gap & polarization',
+    title: 'Energy gap and polarization',
   },
   {
     id: 'pi-chain',
-    number: 10,
+    number: 5,
     shortTitle: 'Pi systems',
     title: 'More atoms, more pi orbitals',
   },
   {
     id: 'calculation',
-    number: 11,
+    number: 6,
     shortTitle: 'Real calculation',
     title: 'Compare with a calculation',
   },
